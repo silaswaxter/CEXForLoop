@@ -1,0 +1,2 @@
+" uncomment for offline build
+" USE_BAZEL_VERSION=7.1.2
