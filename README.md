@@ -1,8 +1,7 @@
-# constexpr_for
+# CEXForLoop
 
-constexpr_for is a header-only library for C++>14. It provides a for-loop
-mechanism in a constexpr context (useful for compile time computation of
-constexpr data).
+CEXForLoop is a header-only library for C++>14. It provides a for-loop mechanism
+that is within a constexpr context meaning it can operate on constexpr data.
 
 ## Illustrative Examples
 
@@ -16,7 +15,7 @@ TODO
 
 ## Installing
 
-1. Your compiler must be pointed at constexpr_for (e.g.
+1. Your compiler must be pointed at CEXForLoop (e.g.
    `-I<location-of-this-library>/include`)
 
 ## Contributing
