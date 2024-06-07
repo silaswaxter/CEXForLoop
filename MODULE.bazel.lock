@@ -1,6 +1,6 @@
 {
   "lockFileVersion": 6,
-  "moduleFileHash": "8709ca640b603aac932b309e5c6d752f13f450b8766d9c602ee0ebbaf103951a",
+  "moduleFileHash": "fd89435e0ff0cf8e014e244c493f888494303e2559944ed3204a1cd6855a11be",
   "flags": {
     "cmdRegistries": [
       "https://bcr.bazel.build/"
@@ -17,10 +17,10 @@
   },
   "moduleDepGraph": {
     "<root>": {
-      "name": "constexpr_for",
+      "name": "cex_for_loop",
       "version": "",
       "key": "<root>",
-      "repoName": "constexpr_for",
+      "repoName": "cex_for_loop",
       "executionPlatformsToRegister": [],
       "toolchainsToRegister": [],
       "extensionUsages": [],
