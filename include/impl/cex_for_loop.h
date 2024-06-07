@@ -1,26 +1,27 @@
 #ifndef IMPL_CEX_FOR_LOOP_H
 #define IMPL_CEX_FOR_LOOP_H
 
-#include <cstddef>
 #include <type_traits>
 
 namespace CEXForLoop {
 namespace impl {
 
-template <typename Functor>
-struct Thing {
-  using FunctorData = typename Functor::Data;
+template <typename BoolExpressionFunctor, typename BodyFunctor>
+struct ConstexprFor {
+  using FunctorData = typename BodyFunctor::Data;
 
   template <long long start, long long end, long long inc>
-  static constexpr auto constexpr_for(FunctorData initial_data) ->
-      typename std::enable_if<(start != end), FunctorData>::type {
-    return constexpr_for<start + inc, end, inc>(
-        Functor::template func<start>(initial_data));
+  static constexpr auto func(FunctorData initial_data) ->
+      typename std::enable_if<BoolExpressionFunctor::func(start, end),
+                              FunctorData>::type {
+    return func<start + inc, end, inc>(
+        BodyFunctor::template func<start>(initial_data));
   };
 
   template <long long start, long long end, long long inc>
-  static constexpr auto constexpr_for(FunctorData initial_data) ->
-      typename std::enable_if<(start == end), FunctorData>::type {
+  static constexpr auto func(FunctorData initial_data) ->
+      typename std::enable_if<!BoolExpressionFunctor::func(start, end),
+                              FunctorData>::type {
     return initial_data;
   };
 };
