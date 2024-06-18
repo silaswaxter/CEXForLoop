@@ -130,3 +130,27 @@ TEST(ConstexprFor, TemplateInstantiationDepth2000) {
     ASSERT_EQ(result.i_tracker[i], i);
   }
 }
+
+TEST(ConstexprFor, TemplateInstantiationDepth10000) {
+  constexpr long long test_template_depth = 10000;
+  constexpr TestFunctorSet_LargeIteration::Data test_initial_values = {};
+
+  constexpr auto result =
+      CEXForLoop::constexpr_for<0, test_template_depth, 1,
+                                CEXForLoop::BoolExpressionFunctor_LEQ,
+                                TestFunctorSet_LargeIteration>(
+          test_initial_values);
+
+  // Uncomment to print i values in order
+  // -----
+  // std::string print_string;
+  // for (int i = 0; i < test_template_depth; i++) {
+  //   print_string.append(std::to_string(result.i_tracker[i]) + ", ");
+  // }
+  // ADD_FAILURE() << print_string;
+
+  ASSERT_EQ(result.last_i_value, test_template_depth);
+  for (std::size_t i = 0; i < test_template_depth; i++) {
+    ASSERT_EQ(result.i_tracker[i], i);
+  }
+}
