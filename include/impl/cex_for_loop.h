@@ -81,16 +81,18 @@ struct ExponentialCEXForFunctor {
   struct ChildExpMetaFunctor {
     using Data = FunctorData;
 
-    // account for this template instantiation (the LinearCEXFor and the
-    // function)
-    static constexpr auto child_current_template_depth =
-        parent_current_template_depth + 3;
     static constexpr auto first_child_start = parent_end + inc;
 
     template <long long i>
     static constexpr auto func(Data initial_data) ->
         typename std::enable_if<child_end(first_child_start, i) != end,
                                 Data>::type {
+      // account for this template instantiation (the LinearCEXFor and the
+      // function)
+      constexpr auto child_current_template_depth =
+          parent_current_template_depth +
+          (i + 1) +  // for each instantiation of the meta function
+          1;         // for the base case in LinearCEXFor recursion
       initial_data = ExponentialCEXForFunctor<
           BoolExpressionFunctor, BodyFunctor, child_end(first_child_start, i),
           child_end(first_child_start, (i + 1)), inc,
