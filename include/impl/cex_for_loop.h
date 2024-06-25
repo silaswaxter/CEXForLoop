@@ -1,3 +1,8 @@
+// ABOUT: This file contains the implementation for the constexpr for loop.
+//        Inspired by Michael Gonzonda's work
+//        (https://www.codeproject.com/Articles/857354/Compile-Time-Loops-with-Cplusplus-Creating-a-Gener)
+//        particularly the N-tree expansion for subverting instantiation depth
+//        limits
 #ifndef IMPL_CEX_FOR_LOOP_H
 #define IMPL_CEX_FOR_LOOP_H
 
@@ -53,6 +58,7 @@ struct ExponentialCEXForFunctor {
       max_template_depth - parent_current_template_depth;
 
   // for access by the MetaFunctor
+  static constexpr long long n_children = 8;
   static constexpr long long parent_end =
       start + remaining_template_depth * inc;
 
@@ -69,8 +75,7 @@ struct ExponentialCEXForFunctor {
                                        std::size_t child_number) {
     auto calculated_child =
         first_child_start +
-        ((child_number * (end - first_child_start)) / 8 /* N in n_tree */) *
-            inc;
+        ((child_number * (end - first_child_start)) / n_children) * inc;
     if (BoolExpressionFunctor::func(calculated_child, end)) {
       return calculated_child;
     } else {
@@ -137,13 +142,13 @@ struct ExponentialCEXForFunctor {
         LinearCEXForFunctor<BoolExpressionFunctor, BodyFunctor>::template func<
             start_, parent_end, inc_>(initial_data);
 
-    // Create 8 children w/ each a (1/8)th share of remaining iterations
-    // Use our existing linear CEX for loop implementation, but for use a meta
-    // function that is responsible for instantiating the iterations for each
-    // child.
+    // Create n_children children w/ each a (1/n_children)th share of remaining
+    // iterations Use our existing linear CEX for loop implementation, but for
+    // use a meta function that is responsible for instantiating the iterations
+    // for each child.
     initial_data =
         LinearCEXForFunctor<BoolExpressionFunctor_LT, ChildExpMetaFunctor>::
-            template func<0, 8, 1>(initial_data);
+            template func<0, n_children, 1>(initial_data);
 
     return initial_data;
   }
