@@ -71,16 +71,6 @@ struct TestFunctorSet_LargeIteration {
   };
 };
 
-// TODO: add tests for the following:
-//        -[x] negative number to negative number
-//        -[x] negative number to positive number
-//        -[ ] positive number to negative number
-//        -[x] negative number to zero
-//        -[x] zero to negative number
-//        -[x] positive number to zero
-//        -[x] zero to positive number
-//        -[x] increment by non-one value
-
 TEST(ConstexprFor, ZeroToPositiveNumber) {
   constexpr long long test_template_depth = 5;
   constexpr TestFunctorSet_SmallIteration::Data test_initial_values = {
@@ -190,34 +180,27 @@ TEST(ConstexprFor, NegativeNumberToPositiveNumberBy3s) {
   ASSERT_EQ(result.result, 0);
 }
 
-// TEST(ConstexprFor, TemplateInstantiationDepth2000) {
-//   constexpr long long test_template_depth = 2000;
-//   constexpr TestFunctorSet_LargeIterationIncBy3WithNegative1700Start::Data
-//       test_initial_values = {};
-//
-//   constexpr auto result = CEXForLoop::constexpr_for<
-//       (-3 * test_template_depth) + 300, 300, 3,
-//       CEXForLoop::BoolExpressionFunctor_LEQ,
-//       TestFunctorSet_LargeIterationIncBy3WithNegative1700Start>(
-//       test_initial_values);
-//
-//   // Uncomment to print i values in order
-//   // -----
-//   // std::string print_string;
-//   // for (int i = 0; i < test_template_depth; i++) {
-//   //   print_string.append(std::to_string(result.i_tracker[i]) + ", ");
-//   // }
-//   // ADD_FAILURE() << print_string;
-//
-//   ASSERT_EQ(result.last_i_value, 300);
-//   std::array<int, test_template_depth> expected_i_tracker = {};
-//   for (std::size_t i = test_template_depth - 1; i >= 0; i--) {
-//     expected_i_tracker[i] = 3 * i + 300;
-//   }
-//   for (std::size_t i = 0; i < test_template_depth; i++) {
-//     ASSERT_EQ(result.i_tracker[i], i);
-//   }
-// }
+TEST(ConstexprFor, TemplateInstantiationDepth2000) {
+  constexpr long long test_template_depth = 2000;
+  constexpr TestFunctorSet_LargeIterationIncBy3WithNegative1700Start::Data
+      test_initial_values = {};
+
+  constexpr auto result = CEXForLoop::constexpr_for<
+      (-3 * test_template_depth) + 300, 300, 3,
+      CEXForLoop::BoolExpressionFunctor_LEQ,
+      TestFunctorSet_LargeIterationIncBy3WithNegative1700Start>(
+      test_initial_values);
+
+  // Uncomment to print i values in order
+  // -----
+  // std::string print_string;
+  // for (int i = 0; i < test_template_depth; i++) {
+  //   print_string.append(std::to_string(result.i_tracker[i]) + ", ");
+  // }
+  // ADD_FAILURE() << print_string;
+
+  ASSERT_EQ(result.last_i_value, 300);
+}
 
 TEST(ConstexprFor, TemplateInstantiationDepth10000) {
   constexpr long long test_template_depth = 10'000;
