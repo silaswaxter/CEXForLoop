@@ -37,9 +37,11 @@ struct MyFunctor {
 };
 ```
 
-> [!NOTE] These are all of the constraints. This list is exhaustive, but if you
-> copy and paste the definition and change only the `Data` and `func` internals
-> you don't need to worry about these.
+> [!NOTE]
+>
+> These are all of the constraints. This list is exhaustive, but if you copy and
+> paste the definition and change only the `Data` and `func` internals you don't
+> need to worry about these.
 >
 > - The function must be wrapped in a structure
 > - The function must be named `func`
@@ -49,6 +51,8 @@ struct MyFunctor {
 >   `i`).
 > - The function must only take and return the previously defined `Data` struct
 
+<!-- markdownlint-disable MD029 -->
+
 3. Call the constexpr for loop. The iteration variable begins at the 1st
    template parameter and is incremented by the 3rd template parameter;
    iteration ends when the boolean expression functor (the 4th template
@@ -56,6 +60,8 @@ struct MyFunctor {
    template parameter. The 5th template parameter is your custom functor type.
    The function parameter is the initial data of your custom functor `Data`
    type. Here is an example.
+
+<!-- markdownlint-enable MD029 -->
 
 ```cpp
 constexpr MyFunctor::Data input_data = { {1, 1, 2, 2, 3, 3, 4, 4, 5, 5}, 12};
@@ -65,7 +71,9 @@ constexpr MyFunctor::Data result =
                               MyFunctor>(input_data);
 ```
 
-> [!NOTE] All the standard boolean expressions are already defined in
+> [!NOTE]
+>
+> All the standard boolean expressions are already defined in
 > `include/bool_expression_functors.h`.
 
 ## Requirements
