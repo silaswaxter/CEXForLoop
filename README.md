@@ -94,12 +94,12 @@ collaboration processes in terms of writing code and project direction.
 
 ### Standards
 
-Some standards/best practices that are adhered to on a best-effort basis.
+This project follows these standards:
 
-- [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html)
-  - `clang-format` formatting (config file tracked)
 - [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
-  - `clang-tidy` linting (config file tracked)
+- [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html)
+  - `clang-format` formatting (see `.clang-format` for config details)
+  - `clang-tidy` linting (see `.clang-tidy` for config details)
 
 ### Setup the Test Environment
 
