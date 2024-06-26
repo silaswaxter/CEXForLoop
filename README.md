@@ -1,11 +1,72 @@
 # CEXForLoop
 
-CEXForLoop is a header-only library for C++>14. It provides a for-loop mechanism
-that is within a constexpr context meaning it can operate on constexpr data.
+CEXForLoop is a header-only library for C++>=14. It provides a constexpr
+for-loop where the iteration variable is also constexpr. The library converts
+iteration to recursion. The library subverts the compiler enforced template
+instantiation depth so that iteration lengths can be larger than this limit;
+expansions greater than user-override-able `CEX_FOR_LOOP_MAX_TEMPLATE_DEPTH`
+(default = 100) take place along an N-tree where each node linearly recurses as
+much as possible without violating the maximum template depth limit.
 
 ## Illustrative Examples
 
-TODO
+Usage is simple.
+
+1. Include the top-level headers, `include/constexpr.h` and
+   `include/bool_expression_functors.h`.
+2. Define a function that will make up the body/statement of the for loop. There
+   are some constraints on this definition like it must be within a struct known
+   as a functor. An example is shown below:
+
+```cpp
+struct MyFunctor {
+  // Must be called "Data"
+  struct Data {
+    // CUSTOM
+    std::array<uint8_t, 10> foo;
+    uint8_t bar;
+  };
+
+  // Must be called "func" and take this form
+  template <long long i>
+  static constexpr Data func(Data input_data) {
+    // CUSTOM
+    std::get<i>(input_data.foo) = std::get<i>(input_data.foo) + input_data.bar;
+    return input_data;
+  };
+};
+```
+
+> [!NOTE] These are all of the constraints. This list is exhaustive, but if you
+> copy and paste the definition and change only the `Data` and `func` internals
+> you don't need to worry about these.
+>
+> - The function must be wrapped in a structure
+> - The function must be named `func`
+> - The functor (i.e. encapsulating struct) must also define a struct called
+>   `Data`.
+> - The function must be templated on **only** a `long long` variable (e.g.
+>   `i`).
+> - The function must only take and return the previously defined `Data` struct
+
+3. Call the constexpr for loop. The iteration variable begins at the 1st
+   template parameter and is incremented by the 3rd template parameter;
+   iteration ends when the boolean expression functor (the 4th template
+   parameter) returns false while comparing the iteration variable to the 2nd
+   template parameter. The 5th template parameter is your custom functor type.
+   The function parameter is the initial data of your custom functor `Data`
+   type. Here is an example.
+
+```cpp
+constexpr MyFunctor::Data input_data = { {1, 1, 2, 2, 3, 3, 4, 4, 5, 5}, 12};
+constexpr MyFunctor::Data result =
+    CEXForLoop::constexpr_for<0, input_data.foo.size(), 1,
+                              CEXForLoop::BoolExpressionFunctor_LT,
+                              MyFunctor>(input_data);
+```
+
+> [!NOTE] All the standard boolean expressions are already defined in
+> `include/bool_expression_functors.h`.
 
 ## Requirements
 
@@ -15,8 +76,8 @@ TODO
 
 ## Installing
 
-1. Your compiler must be pointed at CEXForLoop (e.g.
-   `-I<location-of-this-library>/include`)
+Your compiler must be pointed at CEXForLoop (e.g.
+`-I<location-of-this-library>/include`)
 
 ## Contributing
 
