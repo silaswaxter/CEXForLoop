@@ -155,6 +155,6 @@ struct ExponentialCEXForFunctor {
 };
 
 }  // namespace impl
-}  // namespace CEXForLoop
+}  // namespace cex_for_loop
 
 #endif  // IMPL_CEX_FOR_LOOP_H
