@@ -123,13 +123,15 @@ This project follows these standards:
     LittlePP "lives at the head" in terms of bazel version so by using Bazelisk,
     the latest version of bazel will be used whenever its invoked.
 
-_note: The build system used for testing the library is Bazel. Since, at the
-time of writing, Bazel's default C++ toolchain is for c++2011, and AFAIK there
-isn't a way to override this without resorting to the `copts` in BUILD targets,
-a basic c++ toolchain is constructed; currently, the hermeticity is violated
-since this toolchain depends on clang 16 being installed on a Unix machine--my
-setup. This should be fixed, but I didn't want to waste time making the build
-system generic if I'm the only one using it._
+> [!NOTE]
+>
+> **About Bazel's Toolchain**: The build system used for testing the library is
+> Bazel. Since, at the time of writing, Bazel's default C++ toolchain is for
+> c++2011, and AFAIK there isn't a way to override this without resorting to the
+> `copts` in BUILD targets, a basic c++ toolchain is constructed; currently, the
+> hermeticity is violated since this toolchain depends on clang 16 being
+> installed on a Unix machine--my setup. This should be fixed, but I didn't want
+> to waste time making the build system generic if I'm the only one using it.
 
 #### Commands
 
