@@ -8,7 +8,7 @@
 
 #include <type_traits>
 
-#include "include/bool_expression_functors.h"
+#include "../bool_expression_functors.h"
 
 // Define a user override-able constant that limits the maximum template depth
 // for this library. This library guarantees that it will not instantiate itself
