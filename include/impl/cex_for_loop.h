@@ -31,7 +31,8 @@ struct LinearCEXForFunctor {
   template <IType StartLocal = Start, IType EndLocal = End,
             IType IncLocal = Inc>
   static constexpr auto func(FunctorData initial_data) ->
-      typename std::enable_if<BoolExpressionFunctor::func(StartLocal, EndLocal),
+      typename std::enable_if<BoolExpressionFunctor::template WithType<
+                                  IType>::func(StartLocal, EndLocal),
                               FunctorData>::type {
     return func<StartLocal + IncLocal, EndLocal, IncLocal>(
         BodyFunctor::template func<StartLocal>(initial_data));
@@ -40,8 +41,8 @@ struct LinearCEXForFunctor {
   template <IType StartLocal = Start, IType EndLocal = End,
             IType IncLocal = Inc>
   static constexpr auto func(FunctorData initial_data) ->
-      typename std::enable_if<!BoolExpressionFunctor::func(StartLocal,
-                                                           EndLocal),
+      typename std::enable_if<!BoolExpressionFunctor::template WithType<
+                                  IType>::func(StartLocal, EndLocal),
                               FunctorData>::type {
     return initial_data;
   }
@@ -106,7 +107,8 @@ struct ExponentialCEXForFunctor {
 
       // since we rounded up, the calculated end might be past the overall End,
       // so we limit the child_end to this value.
-      if (BoolExpressionFunctor::func(child_end_calculated, End)) {
+      if (BoolExpressionFunctor::template WithType<IType>::func(
+              child_end_calculated, End)) {
         return child_end_calculated;
       }
       return End;
@@ -114,26 +116,27 @@ struct ExponentialCEXForFunctor {
 
     template <IType I>
     static constexpr auto func(Data initial_data) ->
-        typename std::enable_if<
-            BoolExpressionFunctor::func((child_end(I) + Inc), End),
-            Data>::type {
+        typename std::enable_if<BoolExpressionFunctor::template WithType<
+                                    IType>::func((child_end(I) + Inc), End),
+                                Data>::type {
       constexpr IType kRemainingTemplateDepth =
           kThisExpFunctorTemplateDepth +
           I +  // Since LinearCEXFor is used, each child increases
                // current template depth by 1.
           1;   // Account for child meta function instantiation.
-      initial_data = ExponentialCEXForFunctor<
-          IType, child_end(I) + Inc, child_end((I + 1)), Inc,
-          BoolExpressionFunctor, BodyFunctor,
-          kRemainingTemplateDepth>::func(initial_data);
+      initial_data =
+          ExponentialCEXForFunctor<IType, child_end(I) + Inc,
+                                   child_end((I + 1)), Inc,
+                                   BoolExpressionFunctor, BodyFunctor,
+                                   kRemainingTemplateDepth>::func(initial_data);
       return initial_data;
     };
 
     template <IType I>
     static constexpr auto func(Data initial_data) ->
-        typename std::enable_if<
-            !BoolExpressionFunctor::func((child_end(I) + Inc), End),
-            Data>::type {
+        typename std::enable_if<!BoolExpressionFunctor::template WithType<
+                                    IType>::func((child_end(I) + Inc), End),
+                                Data>::type {
       return initial_data;
     };
   };
