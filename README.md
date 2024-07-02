@@ -10,9 +10,10 @@ much as possible without violating the maximum template depth limit.
 
 ## Illustrative Examples
 
-Usage is simple.
+Usage is simple. A live example of the following code can be found at
+[this compiler explorer](https://godbolt.org/z/zYTEGo76x).
 
-1. Include the top-level headers, `include/constexpr.h` and
+1. Include the top-level headers, `include/cex_for_loop.h` and
    `include/bool_expression_functors.h`.
 2. Define a function that will make up the body/statement of the for loop. There
    are some constraints on this definition like it must be within a struct known
@@ -22,17 +23,19 @@ Usage is simple.
 struct MyFunctor {
   // Must be called "Data"
   struct Data {
-    // CUSTOM
+    //-----CUSTOM CONTENTS-----
     std::array<uint8_t, 10> foo;
     uint8_t bar;
+    //-----CUSTOM CONTENTS-----
   };
 
-  // Must be called "func" and take this form
-  template <long long i>
+  // Must be called "func"
+  template <uint8_t I>  // `I` will be of type `IType` (1st template parameter)
   static constexpr Data func(Data input_data) {
-    // CUSTOM
-    std::get<i>(input_data.foo) = std::get<i>(input_data.foo) + input_data.bar;
+    //-----CUSTOM CONTENTS-----
+    std::get<I>(input_data.foo) = std::get<I>(input_data.foo) + input_data.bar;
     return input_data;
+    //-----CUSTOM CONTENTS-----
   };
 };
 ```
@@ -47,17 +50,20 @@ struct MyFunctor {
 > - The function must be named `func`
 > - The functor (i.e. encapsulating struct) must also define a struct called
 >   `Data`.
-> - The function must be templated on **only** a `long long` variable (e.g.
->   `i`).
+> - The function **should** (will otherwise be cast) be templated on whatever
+
+    user provided type is provided at the `CEXForLoop::constexpr_for<...>(...)`
+    call-site (aka first template parameter).
+
 > - The function must only take and return the previously defined `Data` struct
 
 <!-- markdownlint-disable MD029 -->
 
-3. Call the constexpr for loop. The iteration variable begins at the 1st
-   template parameter and is incremented by the 3rd template parameter;
-   iteration ends when the boolean expression functor (the 4th template
-   parameter) returns false while comparing the iteration variable to the 2nd
-   template parameter. The 5th template parameter is your custom functor type.
+3. Call the constexpr for loop. The iteration variable begins at the 2nd
+   template parameter and is incremented by the 4th template parameter;
+   iteration ends when the boolean expression functor (the 5th template
+   parameter) returns false while comparing the iteration variable to the 3rd
+   template parameter. The 6th template parameter is your custom functor type.
    The function parameter is the initial data of your custom functor `Data`
    type. Here is an example.
 
@@ -72,6 +78,9 @@ constexpr MyFunctor::Data result =
 ```
 
 > [!NOTE]
+>
+> `IType` (the first template parameter) must be a be a non-cv-qualified signed
+> integer type.
 >
 > All the standard boolean expressions are already defined in
 > `include/bool_expression_functors.h`.
