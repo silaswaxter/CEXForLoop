@@ -31,9 +31,9 @@ struct LinearCEXForFunctor {
   template <IType StartLocal = Start, IType EndLocal = End,
             IType IncLocal = Inc>
   static constexpr auto func(FunctorData initial_data) ->
-      typename std::enable_if<BoolExpressionFunctor::template WithType<
-                                  IType>::func(StartLocal, EndLocal),
-                              FunctorData>::type {
+      typename std::enable_if_t<BoolExpressionFunctor::template WithType<
+                                    IType>::func(StartLocal, EndLocal),
+                                FunctorData> {
     return func<StartLocal + IncLocal, EndLocal, IncLocal>(
         BodyFunctor::template func<StartLocal>(initial_data));
   }
@@ -41,9 +41,9 @@ struct LinearCEXForFunctor {
   template <IType StartLocal = Start, IType EndLocal = End,
             IType IncLocal = Inc>
   static constexpr auto func(FunctorData initial_data) ->
-      typename std::enable_if<!BoolExpressionFunctor::template WithType<
-                                  IType>::func(StartLocal, EndLocal),
-                              FunctorData>::type {
+      typename std::enable_if_t<!BoolExpressionFunctor::template WithType<
+                                    IType>::func(StartLocal, EndLocal),
+                                FunctorData> {
     return initial_data;
   }
 };
@@ -100,7 +100,8 @@ struct ExponentialCEXForFunctor {
 
       // Get the number of iterations each child is responsible for rounded up
       IType child_iteration_count =
-          ceil(float(children_iteration_count) / float(kNChildren));
+          ceil(static_cast<float>(children_iteration_count) /
+               static_cast<float>(kNChildren));
 
       IType child_end_calculated =
           kParentEnd + (Inc * nth_child * child_iteration_count);
@@ -116,9 +117,9 @@ struct ExponentialCEXForFunctor {
 
     template <IType I>
     static constexpr auto func(Data initial_data) ->
-        typename std::enable_if<BoolExpressionFunctor::template WithType<
-                                    IType>::func((child_end(I) + Inc), End),
-                                Data>::type {
+        typename std::enable_if_t<BoolExpressionFunctor::template WithType<
+                                      IType>::func((child_end(I) + Inc), End),
+                                  Data> {
       constexpr IType kRemainingTemplateDepth =
           kThisExpFunctorTemplateDepth +
           I +  // Since LinearCEXFor is used, each child increases
@@ -134,9 +135,9 @@ struct ExponentialCEXForFunctor {
 
     template <IType I>
     static constexpr auto func(Data initial_data) ->
-        typename std::enable_if<!BoolExpressionFunctor::template WithType<
-                                    IType>::func((child_end(I) + Inc), End),
-                                Data>::type {
+        typename std::enable_if_t<!BoolExpressionFunctor::template WithType<
+                                      IType>::func((child_end(I) + Inc), End),
+                                  Data> {
       return initial_data;
     };
   };
@@ -145,10 +146,10 @@ struct ExponentialCEXForFunctor {
   template <IType StartLocal = Start, IType EndLocal = End,
             IType IncLocal = Inc>
   static constexpr auto func(FunctorData initial_data) ->
-      typename std::enable_if<
+      typename std::enable_if_t<
           (iteration_count<StartLocal, EndLocal, IncLocal>() <
            kRemainingTemplateDepth),
-          FunctorData>::type {
+          FunctorData> {
     initial_data =
         LinearCEXForFunctor<IType, StartLocal, EndLocal, IncLocal,
                             BoolExpressionFunctor,
@@ -160,10 +161,10 @@ struct ExponentialCEXForFunctor {
   template <IType StartLocal = Start, IType EndLocal = End,
             IType IncLocal = Inc>
   static constexpr auto func(FunctorData initial_data) ->
-      typename std::enable_if<
+      typename std::enable_if_t<
           !(iteration_count<StartLocal, EndLocal, IncLocal>() <
             kRemainingTemplateDepth),
-          FunctorData>::type {
+          FunctorData> {
     // Its helpful to think of this path as the root node of the tree. A tree
     // is composed of smaller trees.
     //
