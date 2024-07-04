@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <cstdint>
 
 #include "include/bool_expression_functors.h"
 #include "include/cex_for_loop.h"
@@ -92,7 +93,7 @@ TEST(ConstexprFor, ZeroToPositiveNumber) {
   // ADD_FAILURE() << print_string;
 
   ASSERT_EQ(kResult.last_i_value, kTestTemplateDepth - 1);
-  for (std::size_t i = 0; i < kTestTemplateDepth; i++) {
+  for (uint32_t i = 0; i < kTestTemplateDepth; i++) {
     ASSERT_EQ(kResult.i_tracker[i], i);
   }
 }
@@ -116,7 +117,7 @@ TEST(ConstexprFor, PositiveNumberToZero) {
   // }
   // ADD_FAILURE() << print_string;
 
-  for (std::size_t i = 0; i < kTestTemplateDepth; i++) {
+  for (uint32_t i = 0; i < kTestTemplateDepth; i++) {
     ASSERT_EQ(kResult.i_tracker[i], i);
   }
   ASSERT_EQ(kResult.last_i_value, 0);
@@ -234,7 +235,7 @@ TEST(ConstexprFor, TemplateInstantiationDepth10000) {
   // ADD_FAILURE() << print_string;
 
   ASSERT_EQ(kResult.last_i_value, kTestTemplateDepth);
-  for (std::size_t i = 0; i < kTestTemplateDepth; i++) {
+  for (uint64_t i = 0; i < kTestTemplateDepth; i++) {
     ASSERT_EQ(kResult.i_tracker[i], i);
   }
 }
