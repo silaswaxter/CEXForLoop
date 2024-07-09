@@ -5,7 +5,7 @@ cc_test(
         "constexpr_for_test.cc",
     ],
     deps = [
-        "//include:CEXForLoop",
+        "//:CEXForLoop",
         "@googletest//:gtest_main",
     ],
 )
