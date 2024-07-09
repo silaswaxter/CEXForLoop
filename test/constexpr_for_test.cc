@@ -2,9 +2,8 @@
 
 #include <array>
 #include <cstdint>
-
-#include "include/bool_expression_functors.h"
-#include "include/cex_for_loop.h"
+#include <CEXForLoop/cex_for_loop.h>
+#include <CEXForLoop/bool_expression_functors.h>
 
 struct TestFunctorSetSmallIteration {
   struct Data {
