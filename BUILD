@@ -1,12 +1,12 @@
 cc_library(
     name = "CEXForLoop",
-    srcs = glob(["include/impl/*.h"]),
+    srcs = glob(["include/CEXForLoop/impl/*.h"]),
     hdrs = [
-        "include/cex_for_loop.h",
-        "include/bool_expression_functors.h",
+        "include/CEXForLoop/cex_for_loop.h",
+        "include/CEXForLoop/bool_expression_functors.h",
     ],
     visibility = ["//visibility:public"],
-    strip_include_prefix = "include/",
+    includes = ["include"],
 )
 
 load("@hedron_compile_commands//:refresh_compile_commands.bzl", "refresh_compile_commands")
