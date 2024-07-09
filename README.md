@@ -11,7 +11,7 @@ much as possible without violating the maximum template depth limit.
 ## Illustrative Examples
 
 Usage is simple. A live example of the following code can be found at
-[this compiler explorer](https://godbolt.org/z/zYTEGo76x).
+[this compiler explorer](https://godbolt.org/z/Erv4rc41c).
 
 1. Include the top-level headers, `include/cex_for_loop.h` and
    `include/bool_expression_functors.h`.
@@ -34,8 +34,8 @@ struct MyFunctor {
   static constexpr Data func(Data input_data) {
     //-----CUSTOM CONTENTS-----
     std::get<I>(input_data.foo) = std::get<I>(input_data.foo) + input_data.bar;
-    return input_data;
     //-----CUSTOM CONTENTS-----
+    return input_data;
   };
 };
 ```
