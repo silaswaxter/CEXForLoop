@@ -1,3 +1,14 @@
+cc_library(
+    name = "CEXForLoop",
+    srcs = glob(["include/impl/*.h"]),
+    hdrs = [
+        "include/cex_for_loop.h",
+        "include/bool_expression_functors.h",
+    ],
+    visibility = ["//visibility:public"],
+    strip_include_prefix = "include/",
+)
+
 load("@hedron_compile_commands//:refresh_compile_commands.bzl", "refresh_compile_commands")
 
 # Generate compile_commands.json
