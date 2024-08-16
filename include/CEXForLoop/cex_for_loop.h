@@ -6,7 +6,8 @@
 namespace cex_for_loop {
 
 template <typename IType, IType Start, IType End, IType Inc,
-          typename BoolExpressionFunctor, typename BodyFunctor>
+          typename BoolExpressionFunctor, typename BodyFunctor,
+          typename... TypeEncodedFunctorNTTPs>
 constexpr typename BodyFunctor::Data constexpr_for(
     typename BodyFunctor::Data initial_values) {
   static_assert(!static_cast<bool>(std::is_const<IType>().value),
@@ -18,9 +19,11 @@ constexpr typename BodyFunctor::Data constexpr_for(
       "User provided type must be an integer type (no bools allowed).");
   static_assert(std::is_signed<IType>().value,
                 "User provided type must be signed integer.");
-  return impl::ExponentialCEXForFunctor<IType, Start, End, Inc,
-                                        BoolExpressionFunctor, BodyFunctor,
-                                        1>::func(initial_values);
+  return std::get<0>(
+      impl::LinearCEXForFunctor<IType, Start, End, Inc, BoolExpressionFunctor,
+                                BodyFunctor>::
+          template func<Start, End, Inc, TypeEncodedFunctorNTTPs...>(
+              initial_values));
 };
 
 }  // namespace cex_for_loop

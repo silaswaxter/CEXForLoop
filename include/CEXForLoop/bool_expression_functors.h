@@ -4,7 +4,7 @@
 namespace cex_for_loop {
 
 // NOLINTNEXTLINE(readability-identifier-naming)
-struct BoolExpressionFunctor_EQ {
+struct BoolExpressionFunctor_EQ_uncontrolled_template_depth {
   // The templated struct within allows user to pass this type without having
   // to pass the template parameter at the call-site meaning the CEXForLoop can
   // be "DRY" (Don't Repeat Yourself)
@@ -17,7 +17,7 @@ struct BoolExpressionFunctor_EQ {
 };
 
 // NOLINTNEXTLINE(readability-identifier-naming)
-struct BoolExpressionFunctor_NEQ {
+struct BoolExpressionFunctor_NEQ_uncontrolled_template_depth {
   // The templated struct within allows user to pass this type without having
   // to pass the template parameter at the call-site meaning the CEXForLoop can
   // be "DRY" (Don't Repeat Yourself)

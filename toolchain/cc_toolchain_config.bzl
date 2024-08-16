@@ -101,7 +101,7 @@ def _impl(ctx):
         ctx = ctx,
         features = features,
         cxx_builtin_include_directories = [
-            "/usr/lib/clang/16/include",
+            "/usr/lib/clang/18/include",
             "/usr/include",
         ],
         toolchain_identifier = "local",

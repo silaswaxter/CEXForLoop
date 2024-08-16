@@ -1,15 +1,15 @@
+load("@hedron_compile_commands//:refresh_compile_commands.bzl", "refresh_compile_commands")
+
 cc_library(
     name = "CEXForLoop",
     srcs = glob(["include/CEXForLoop/impl/*.h"]),
     hdrs = [
-        "include/CEXForLoop/cex_for_loop.h",
         "include/CEXForLoop/bool_expression_functors.h",
+        "include/CEXForLoop/cex_for_loop.h",
     ],
-    visibility = ["//visibility:public"],
     includes = ["include"],
+    visibility = ["//visibility:public"],
 )
-
-load("@hedron_compile_commands//:refresh_compile_commands.bzl", "refresh_compile_commands")
 
 # Generate compile_commands.json
 # note: This is not an ideal solution; it violates single-source-of-truth
