@@ -6,9 +6,11 @@
 #ifndef IMPL_CEX_FOR_LOOP_H
 #define IMPL_CEX_FOR_LOOP_H
 
+#include <tuple>
 #include <type_traits>
 
 #include "../bool_expression_functors.h"
+#include "linear_cex_for_loop.h"
 
 // Define a user override-able constant that limits the maximum template depth
 // for this library. This library guarantees that it will not instantiate itself
@@ -22,32 +24,6 @@ constexpr std::size_t kMaxTemplateDepth = CEX_FOR_LOOP_MAX_TEMPLATE_DEPTH;
 namespace cex_for_loop {
 namespace impl {
 
-// A linearly expanding (via recursion) constexpr for loop implementation
-template <typename IType, IType Start, IType End, IType Inc,
-          typename BoolExpressionFunctor, typename BodyFunctor>
-struct LinearCEXForFunctor {
-  using FunctorData = typename BodyFunctor::Data;
-
-  template <IType StartLocal = Start, IType EndLocal = End,
-            IType IncLocal = Inc>
-  static constexpr auto func(FunctorData initial_data) ->
-      typename std::enable_if_t<BoolExpressionFunctor::template WithType<
-                                    IType>::func(StartLocal, EndLocal),
-                                FunctorData> {
-    return func<StartLocal + IncLocal, EndLocal, IncLocal>(
-        BodyFunctor::template func<StartLocal>(initial_data));
-  }
-
-  template <IType StartLocal = Start, IType EndLocal = End,
-            IType IncLocal = Inc>
-  static constexpr auto func(FunctorData initial_data) ->
-      typename std::enable_if_t<!BoolExpressionFunctor::template WithType<
-                                    IType>::func(StartLocal, EndLocal),
-                                FunctorData> {
-    return initial_data;
-  }
-};
-
 // A exponentially expanding (via recursion) constexpr for loop implementation.
 // Expansion along an N-ary Tree
 // (https://en.wikipedia.org/wiki/M-ary_tree)
@@ -56,6 +32,7 @@ template <typename IType, IType Start, IType End, IType Inc,
           IType PrevTemplateDepth>
 struct ExponentialCEXForFunctor {
   using FunctorData = typename BodyFunctor::Data;
+  using FunctorOutputType = typename BodyFunctor::OutputType;
 
   // Magic Numbers
   // -----
@@ -86,8 +63,6 @@ struct ExponentialCEXForFunctor {
   //          called an N-Tree where N is the number of branches. So, the Nth
   //          child is the one-based indexing child.
   struct ChildExpMetaFunctor {
-    using Data = FunctorData;
-
     // Helper constexpr ceil function. see https://stackoverflow.com/a/66146159
     static constexpr IType ceil(float value_floating) {
       const IType return_value = static_cast<int>(value_floating);
@@ -115,30 +90,30 @@ struct ExponentialCEXForFunctor {
       return End;
     }
 
+    using OutputType = std::tuple<FunctorData>;
+
     template <IType I>
-    static constexpr auto func(Data initial_data) ->
+    static constexpr auto func(FunctorData initial_data) ->
         typename std::enable_if_t<BoolExpressionFunctor::template WithType<
                                       IType>::func((child_end(I) + Inc), End),
-                                  Data> {
+                                  OutputType> {
       constexpr IType kRemainingTemplateDepth =
           kThisExpFunctorTemplateDepth +
           I +  // Since LinearCEXFor is used, each child increases
                // current template depth by 1.
           1;   // Account for child meta function instantiation.
-      initial_data =
-          ExponentialCEXForFunctor<IType, child_end(I) + Inc,
-                                   child_end((I + 1)), Inc,
-                                   BoolExpressionFunctor, BodyFunctor,
-                                   kRemainingTemplateDepth>::func(initial_data);
-      return initial_data;
+      return ExponentialCEXForFunctor<
+          IType, child_end(I) + Inc, child_end((I + 1)), Inc,
+          BoolExpressionFunctor, BodyFunctor,
+          kRemainingTemplateDepth>::func(initial_data);
     };
 
     template <IType I>
-    static constexpr auto func(Data initial_data) ->
+    static constexpr auto func(FunctorData initial_data) ->
         typename std::enable_if_t<!BoolExpressionFunctor::template WithType<
                                       IType>::func((child_end(I) + Inc), End),
-                                  Data> {
-      return initial_data;
+                                  OutputType> {
+      return {initial_data};
     };
   };
 
@@ -150,11 +125,9 @@ struct ExponentialCEXForFunctor {
           (iteration_count<StartLocal, EndLocal, IncLocal>() <
            kRemainingTemplateDepth),
           FunctorData> {
-    initial_data =
-        LinearCEXForFunctor<IType, StartLocal, EndLocal, IncLocal,
-                            BoolExpressionFunctor,
-                            BodyFunctor>::template func(initial_data);
-    return initial_data;
+    return LinearCEXForFunctor<IType, StartLocal, EndLocal, IncLocal,
+                               BoolExpressionFunctor,
+                               BodyFunctor>::template func(initial_data);
   }
 
   // exponentially expand to avoid hitting maximum template depth
@@ -178,11 +151,9 @@ struct ExponentialCEXForFunctor {
     // required) 1/Nth share of remaining iterations Use our existing linear
     // CEX for loop implementation, but use a meta function that is responsible
     // for instantiating the iterations for each child.
-    initial_data =
-        LinearCEXForFunctor<IType, 0, kNChildren, 1, BoolExpressionFunctor_LT,
-                            ChildExpMetaFunctor>::func(initial_data);
-
-    return initial_data;
+    return LinearCEXForFunctor<IType, 0, kNChildren, 1,
+                               BoolExpressionFunctor_LT,
+                               ChildExpMetaFunctor>::func(initial_data);
   }
 };
 

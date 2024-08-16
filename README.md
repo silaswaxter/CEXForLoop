@@ -101,6 +101,9 @@ Your compiler must be pointed at CEXForLoop (e.g.
 Use this GitHub repo for issues, PRs, etc. The following subsections describe
 collaboration processes in terms of writing code and project direction.
 
+1. Enable custom git hooks by running
+   `git config --local include.path ../.gitconfig`.
+
 ### Standards
 
 This project follows these standards:

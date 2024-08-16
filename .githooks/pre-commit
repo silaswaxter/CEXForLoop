@@ -1,0 +1,3 @@
+#!/bin/sh
+
+python include/CEXForLoop/impl/generator_linear_cex_for_loop.py 100
