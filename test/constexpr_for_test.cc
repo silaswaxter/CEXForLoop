@@ -112,7 +112,7 @@ struct PassesOneNTTPInitializesFirstDataFunctor {
 };
 
 TEST(ConstexprFor, PassesOneNTTPInitializesFirstData) {
-  constexpr uint32_t kTestEnd = 5;
+  constexpr uint32_t kTestEnd = 7;
 
   using LinearCEXType = cex_for_loop::impl::LinearCEXForFunctor<
       PassesOneNTTPInitializesFirstDataFunctor::IType, 0, kTestEnd, 1,
@@ -120,8 +120,8 @@ TEST(ConstexprFor, PassesOneNTTPInitializesFirstData) {
       PassesOneNTTPInitializesFirstDataFunctor,
       std::tuple<std::integral_constant<std::size_t, 0>>,
       PassesOneNTTPInitializesFirstDataFunctor::TestInitialDataTypeEncoded>::
-      template LinearExpansion0<
-          0, kTestEnd, 1, std::tuple<std::integral_constant<std::size_t, 0>>,
+      template LinearExpansion1<
+          0, kTestEnd, std::tuple<std::integral_constant<std::size_t, 0>>,
           PassesOneNTTPInitializesFirstDataFunctor::TestInitialDataTypeEncoded>;
 
   constexpr auto kResult = LinearCEXType::func();
