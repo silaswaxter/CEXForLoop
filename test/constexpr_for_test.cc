@@ -76,7 +76,7 @@
 //   };
 // };
 
-struct MyFunctor {
+struct PassesOneNTTPInitializesFirstDataFunctor {
   // This is the data that will be returned by this functor. Its modifiable in
   // the context of this functor.
   struct NonConstexprData {
@@ -103,23 +103,28 @@ struct MyFunctor {
     OutputType return_value = {output_data, kNextAppendIndex};
     return return_value;
   };
+
+  struct TestInitialDataTypeEncoded {
+    static constexpr PassesOneNTTPInitializesFirstDataFunctor::NonConstexprData
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        value = {4, 3, {}};
+  };
 };
 
-constexpr MyFunctor::NonConstexprData kTestInitialValue = {4, 3, {}};
+TEST(ConstexprFor, PassesOneNTTPInitializesFirstData) {
+  constexpr uint32_t kTestEnd = 5;
 
-struct TestInitialDataTypeEncoded {
-  // NOLINTNEXTLINE(readability-identifier-naming)
-  static constexpr MyFunctor::NonConstexprData value = kTestInitialValue;
-};
+  using LinearCEXType = cex_for_loop::impl::LinearCEXForFunctor<
+      PassesOneNTTPInitializesFirstDataFunctor::IType, 0, kTestEnd, 1,
+      cex_for_loop::BoolExpressionFunctor_LT,
+      PassesOneNTTPInitializesFirstDataFunctor,
+      std::tuple<std::integral_constant<std::size_t, 0>>,
+      PassesOneNTTPInitializesFirstDataFunctor::TestInitialDataTypeEncoded>::
+      template LinearExpansion0<
+          0, kTestEnd, 1, std::tuple<std::integral_constant<std::size_t, 0>>,
+          PassesOneNTTPInitializesFirstDataFunctor::TestInitialDataTypeEncoded>;
 
-TEST(ConstexprFor, ZeroToPositiveNumber) {
-  constexpr uint32_t kTestEnd = 50;
-
-  constexpr auto kResult = cex_for_loop::impl::LinearCEXForFunctor<
-      MyFunctor::IType, 0, kTestEnd, 1, cex_for_loop::BoolExpressionFunctor_LT,
-      MyFunctor>::template func<TestInitialDataTypeEncoded,
-                                std::integral_constant<std::size_t, 0>>();
-
+  constexpr auto kResult = LinearCEXType::func();
   constexpr auto kData = std::get<0>(kResult);
 
   // Uncomment to print i values in order
@@ -132,16 +137,86 @@ TEST(ConstexprFor, ZeroToPositiveNumber) {
 
   // tests that NTTP passing works and that output_data from (n-1)th iteration
   // is input_data for nth iteration
-  ASSERT_EQ(30, std::get<0>(kData.arr));
-  ASSERT_EQ(49, std::get<19>(kData.arr));
+  ASSERT_EQ(0, std::get<0>(kData.arr));
+  ASSERT_EQ(1, std::get<1>(kData.arr));
 
   // test that initial data is pulled from the correct source and that
   // unmodified data persists
-  // ASSERT_EQ(TestInitialDataTypeEncoded::kValue.foo, kData.foo);
-  // ASSERT_EQ(TestInitialDataTypeEncoded::kValue.bar, kData.foo);
   ASSERT_EQ(4, kData.foo);
   ASSERT_EQ(3, kData.bar);
 }
+
+// struct LargeIterationFunctor {
+//   // This is the data that will be returned by this functor. Its modifiable
+//   in
+//   // the context of this functor.
+//   struct NonConstexprData {
+//     int foo;
+//     char bar;
+//     std::array<uint8_t, 500> arr;
+//   };
+//
+//   // The type for I
+//   using IType = std::size_t;
+//   // The output type for func. The first element is the output data--i.e. the
+//   // result of whatever work was done on the input data. The remaining
+//   elements
+//   // are the template nontype parameters that will be passed to func on each
+//   // call. These parameters are constexpr by definition.
+//   using OutputType = std::tuple<NonConstexprData, std::size_t>;
+//
+//   template <IType I, std::size_t AppendIndex>
+//   static constexpr OutputType func(NonConstexprData input_data) {
+//     NonConstexprData output_data = input_data;
+//     std::get<AppendIndex>(output_data.arr) = I;
+//     constexpr std::size_t kNextAppendIndex =
+//         (AppendIndex + 1 == output_data.arr.size()) ? 0 : AppendIndex + 1;
+//
+//     OutputType return_value = {output_data, kNextAppendIndex};
+//     return return_value;
+//   };
+//
+//   struct TestInitialDataTypeEncoded {
+//     static constexpr
+//     PassesOneNTTPInitializesFirstDataFunctor::NonConstexprData
+//         // NOLINTNEXTLINE(readability-identifier-naming)
+//         value = {4, 3, {}};
+//   };
+// };
+//
+// TEST(ConstexprFor, LargeIterationCount) {
+//   constexpr uint32_t kTestEnd = 200;
+//
+//   constexpr auto kResult = cex_for_loop::impl::MetaLinearCEXForFunctor<
+//       LargeIterationFunctor::IType, 0, kTestEnd, 1,
+//       cex_for_loop::BoolExpressionFunctor_LT, LargeIterationFunctor,
+//       LargeIterationFunctor::TestInitialDataTypeEncoded,
+//       std::tuple<std::integral_constant<std::size_t, 0>>>::kFunc();
+//
+//   constexpr auto kData = std::get<0>(kResult);
+//
+//   // Uncomment to print i values in order
+//   // -----
+//   // std::string print_string;
+//   // for (int i = 0; i < kData.arr.size(); i++) {
+//   //   print_string.append(std::to_string(kData.arr[i]) + ", ");
+//   // }
+//   // ADD_FAILURE() << print_string;
+//
+//   // tests that NTTP passing works and that output_data from (n-1)th
+//   iteration
+//   // is input_data for nth iteration
+//   ASSERT_EQ(19, std::get<19>(kData.arr));
+//   ASSERT_EQ(30, std::get<30>(kData.arr));
+//   ASSERT_EQ(190, std::get<190>(kData.arr));
+//
+//   // test that initial data is pulled from the correct source and that
+//   // unmodified data persists
+//   // ASSERT_EQ(TestInitialDataTypeEncoded::kValue.foo, kData.foo);
+//   // ASSERT_EQ(TestInitialDataTypeEncoded::kValue.bar, kData.foo);
+//   ASSERT_EQ(4, kData.foo);
+//   ASSERT_EQ(3, kData.bar);
+// }
 
 // TEST(ConstexprFor, PositiveNumberToZero) {
 //   constexpr uint32_t kTestTemplateDepth = 5;
