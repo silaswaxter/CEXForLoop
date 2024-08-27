@@ -12,7 +12,3 @@ build:clang_config --crosstool_top=//toolchain:clang_suite
 
 # Use --cpu as a differentiator.
 build:clang_config --cpu=k8
-
-# Set the maximum template depth to  CEX_FOR_LOOP_MAX_TEMPLATE_DEPTH to ensure
-# its not violated
-build:clang_config --cxxopt=-ftemplate-depth=100

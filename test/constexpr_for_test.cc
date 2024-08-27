@@ -82,7 +82,7 @@ struct PassesOneNTTPInitializesFirstDataFunctor {
   struct NonConstexprData {
     int foo;
     char bar;
-    std::array<uint8_t, 30> arr;
+    std::array<std::size_t, 50000> arr;
   };
 
   // The type for I
@@ -112,20 +112,14 @@ struct PassesOneNTTPInitializesFirstDataFunctor {
 };
 
 TEST(ConstexprFor, PassesOneNTTPInitializesFirstData) {
-  constexpr uint32_t kTestEnd = 7;
+  constexpr std::size_t kMaxTemplateDepth = 5;
 
-  using LinearCEXType = cex_for_loop::impl::LinearCEXForFunctor<
-      PassesOneNTTPInitializesFirstDataFunctor::IType, 0, kTestEnd, 1,
+  constexpr auto kData = cex_for_loop::constexpr_for<
+      PassesOneNTTPInitializesFirstDataFunctor::IType, 0, kMaxTemplateDepth, 1,
       cex_for_loop::BoolExpressionFunctor_LT,
       PassesOneNTTPInitializesFirstDataFunctor,
       std::tuple<std::integral_constant<std::size_t, 0>>,
-      PassesOneNTTPInitializesFirstDataFunctor::TestInitialDataTypeEncoded>::
-      template LinearExpansion1<
-          0, kTestEnd, std::tuple<std::integral_constant<std::size_t, 0>>,
-          PassesOneNTTPInitializesFirstDataFunctor::TestInitialDataTypeEncoded>;
-
-  constexpr auto kResult = LinearCEXType::func();
-  constexpr auto kData = std::get<0>(kResult);
+      PassesOneNTTPInitializesFirstDataFunctor::TestInitialDataTypeEncoded>();
 
   // Uncomment to print i values in order
   // -----
@@ -135,7 +129,8 @@ TEST(ConstexprFor, PassesOneNTTPInitializesFirstData) {
   // }
   // ADD_FAILURE() << print_string;
 
-  // tests that NTTP passing works and that output_data from (n-1)th iteration
+  // tests that NTTP passing works and that output_data from (n-1)th
+  // iteration
   // is input_data for nth iteration
   ASSERT_EQ(0, std::get<0>(kData.arr));
   ASSERT_EQ(1, std::get<1>(kData.arr));
@@ -147,8 +142,8 @@ TEST(ConstexprFor, PassesOneNTTPInitializesFirstData) {
 }
 
 // struct LargeIterationFunctor {
-//   // This is the data that will be returned by this functor. Its modifiable
-//   in
+//   // This is the data that will be returned by this functor. Its
+//   modifiable in
 //   // the context of this functor.
 //   struct NonConstexprData {
 //     int foo;
@@ -158,10 +153,12 @@ TEST(ConstexprFor, PassesOneNTTPInitializesFirstData) {
 //
 //   // The type for I
 //   using IType = std::size_t;
-//   // The output type for func. The first element is the output data--i.e. the
+//   // The output type for func. The first element is the output data--i.e.
+//   the
 //   // result of whatever work was done on the input data. The remaining
 //   elements
-//   // are the template nontype parameters that will be passed to func on each
+//   // are the template nontype parameters that will be passed to func on
+//   each
 //   // call. These parameters are constexpr by definition.
 //   using OutputType = std::tuple<NonConstexprData, std::size_t>;
 //
@@ -170,7 +167,8 @@ TEST(ConstexprFor, PassesOneNTTPInitializesFirstData) {
 //     NonConstexprData output_data = input_data;
 //     std::get<AppendIndex>(output_data.arr) = I;
 //     constexpr std::size_t kNextAppendIndex =
-//         (AppendIndex + 1 == output_data.arr.size()) ? 0 : AppendIndex + 1;
+//         (AppendIndex + 1 == output_data.arr.size()) ? 0 : AppendIndex +
+//         1;
 //
 //     OutputType return_value = {output_data, kNextAppendIndex};
 //     return return_value;
