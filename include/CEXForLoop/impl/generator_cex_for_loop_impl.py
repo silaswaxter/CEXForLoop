@@ -119,7 +119,8 @@ def generate_header_file(file_path, linear_expansion_length, linear_expansion_co
 
         f.write("template <typename IType, IType Start, IType End, IType Inc,\n")
         f.write("          typename BoolExpressionFunctor, typename BodyFunctor,\n")
-        f.write("          typename TupleWithTypeEncodedNTTPs, typename InitialDataFunctor>\n")
+        f.write("          typename InitialTupleWithTypeEncodedNTTPs,\n")
+        f.write("          typename InitialNonCEXDataFunctor>\n")
         f.write("class NAryTreeCEXForLoop {\n")
         f.write(" private:\n")
 
@@ -134,15 +135,15 @@ def generate_header_file(file_path, linear_expansion_length, linear_expansion_co
 
         f.write("  // clang-format off\n")
         f.write("  template <NthTypeOfTuple<1, FunctorOutputType> NTTP0Value>\n")
-        f.write("  using NextTupleWithTypeEncodedNTTPs = std::tuple<\n")
+        f.write("  using NextInitialTupleWithTypeEncodedNTTPs = std::tuple<\n")
         f.write("      std::integral_constant<NthTypeOfTuple<1, FunctorOutputType>, NTTP0Value>\n")
         f.write("      >;\n")
         f.write("  // clang-format on\n\n")
 
         for n in range(linear_expansion_count):
             f.write("  template <IType LocalStart, IType LocalEnd,\n")
-            f.write("            typename LocalTupleWithTypeEncodedNTTPs,\n")
-            f.write("            typename LocalInitialDataFunctor>\n")
+            f.write("            typename LocalInitialTupleWithTypeEncodedNTTPs,\n")
+            f.write("            typename LocalInitialNonCEXDataFunctor>\n")
             f.write(f"  struct LinearExpansion{n} {{\n")
             f.write("    static constexpr IType kLocalIterationCount =\n")
             f.write("        GetIterationCount<IType, LocalStart, LocalEnd, Inc,\n")
@@ -165,8 +166,8 @@ def generate_header_file(file_path, linear_expansion_length, linear_expansion_co
                 f.write("    struct INone<UnusedType,\n")
                 f.write("                 std::enable_if_t<kLocalIterationCount == 0, void>> {\n")
                 f.write("      static constexpr FunctorOutputType kPriorOutput = {\n")
-                f.write("          LocalInitialDataFunctor::value,\n")
-                f.write("          NthTypeOfTuple<0, LocalTupleWithTypeEncodedNTTPs>::value};\n")
+                f.write("          LocalInitialNonCEXDataFunctor::value,\n")
+                f.write("          NthTypeOfTuple<0, LocalInitialTupleWithTypeEncodedNTTPs>::value};\n")
                 f.write("\n")
                 f.write("      // NOLINTNEXTLINE(readability-identifier-naming)\n")
                 f.write("      static constexpr auto kValue = kPriorOutput;\n")
@@ -176,8 +177,8 @@ def generate_header_file(file_path, linear_expansion_length, linear_expansion_co
                     f.write(f"    struct I{i}<UnusedType, std::enable_if_t<kLocalIterationCount >= {i+1}, void>> {{\n")
                     if i == 0:
                         f.write("      static constexpr FunctorOutputType kPriorOutput = {\n")
-                        f.write("          LocalInitialDataFunctor::value,\n")
-                        f.write("          NthTypeOfTuple<0, LocalTupleWithTypeEncodedNTTPs>::value};\n")
+                        f.write("          LocalInitialNonCEXDataFunctor::value,\n")
+                        f.write("          NthTypeOfTuple<0, LocalInitialTupleWithTypeEncodedNTTPs>::value};\n")
                     else:
                         f.write(f"      static constexpr FunctorOutputType kPriorOutput = I{i-1}<>::kValue;\n")
                     f.write("\n")
@@ -211,12 +212,13 @@ def generate_header_file(file_path, linear_expansion_length, linear_expansion_co
                         f.write(f"      static constexpr auto kValue = LinearExpansion{n-1}<\n")
                         f.write(f"          GetExpansionStart<IType, LocalStart, Inc, {n}, {i}>(),\n")
                         f.write(f"          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, {n}, {i}>(),\n")
-                        f.write("          LocalTupleWithTypeEncodedNTTPs, LocalInitialDataFunctor>::func();\n")
+                        f.write("          LocalInitialTupleWithTypeEncodedNTTPs,\n")
+                        f.write("          LocalInitialNonCEXDataFunctor>::func();\n")
                         f.write("    };\n")
                     else:
                         f.write(f"      static constexpr FunctorOutputType kPriorOutput = I{i-1}<>::kValue;\n\n")
 
-                        f.write("      struct NextInitialDataFunctor {\n")
+                        f.write("      struct NextInitialNonCEXDataFunctor {\n")
                         f.write("        // NOLINTNEXTLINE(readability-identifier-naming)\n")
                         f.write("        static constexpr FunctorData value = std::get<0>(kPriorOutput);\n")
                         f.write("      };\n\n")
@@ -225,8 +227,8 @@ def generate_header_file(file_path, linear_expansion_length, linear_expansion_co
                         f.write(f"      static constexpr auto kValue = LinearExpansion{n-1}<\n")
                         f.write(f"          GetExpansionStart<IType, LocalStart, Inc, {n}, {i}>(),\n")
                         f.write(f"          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, {n}, {i}>(),\n")
-                        f.write("          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,\n")
-                        f.write("          NextInitialDataFunctor>::func();\n")
+                        f.write("          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,\n")
+                        f.write("          NextInitialNonCEXDataFunctor>::func();\n")
                         f.write("    };\n")
 
                 f.write("    // Create SFINAE function that returns the value from the last iteration\n")
@@ -244,8 +246,8 @@ def generate_header_file(file_path, linear_expansion_length, linear_expansion_co
         # Provide the interface
         f.write(" public:\n")
         f.write("  static constexpr FunctorOutputType func() {\n")
-        f.write("    return LinearExpansion6<Start, End, TupleWithTypeEncodedNTTPs,\n")
-        f.write("                            InitialDataFunctor>::func();\n")
+        f.write("    return LinearExpansion6<Start, End, InitialTupleWithTypeEncodedNTTPs,\n")
+        f.write("                            InitialNonCEXDataFunctor>::func();\n")
         f.write("  }\n")
 
         # Close the struct, namespaces, and header guard

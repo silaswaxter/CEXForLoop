@@ -114,7 +114,7 @@ struct PassesOneNTTPInitializesFirstDataFunctor {
 TEST(ConstexprFor, PassesOneNTTPInitializesFirstData) {
   constexpr std::size_t kMaxTemplateDepth = 5;
 
-  constexpr auto kData = cex_for_loop::constexpr_for<
+  constexpr auto kData = cex_for_loop::func<
       PassesOneNTTPInitializesFirstDataFunctor::IType, 0, kMaxTemplateDepth, 1,
       cex_for_loop::BoolExpressionFunctor_LT,
       PassesOneNTTPInitializesFirstDataFunctor,

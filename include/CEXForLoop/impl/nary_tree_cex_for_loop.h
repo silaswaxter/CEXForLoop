@@ -88,7 +88,8 @@ using NthTypeOfTuple = typename std::tuple_element<N, TupleType>::type;
 
 template <typename IType, IType Start, IType End, IType Inc,
           typename BoolExpressionFunctor, typename BodyFunctor,
-          typename TupleWithTypeEncodedNTTPs, typename InitialDataFunctor>
+          typename InitialTupleWithTypeEncodedNTTPs,
+          typename InitialNonCEXDataFunctor>
 class NAryTreeCEXForLoop {
  private:
   using FunctorData = typename BodyFunctor::NonConstexprData;
@@ -101,14 +102,14 @@ class NAryTreeCEXForLoop {
       "count");
   // clang-format off
   template <NthTypeOfTuple<1, FunctorOutputType> NTTP0Value>
-  using NextTupleWithTypeEncodedNTTPs = std::tuple<
+  using NextInitialTupleWithTypeEncodedNTTPs = std::tuple<
       std::integral_constant<NthTypeOfTuple<1, FunctorOutputType>, NTTP0Value>
       >;
   // clang-format on
 
   template <IType LocalStart, IType LocalEnd,
-            typename LocalTupleWithTypeEncodedNTTPs,
-            typename LocalInitialDataFunctor>
+            typename LocalInitialTupleWithTypeEncodedNTTPs,
+            typename LocalInitialNonCEXDataFunctor>
   struct LinearExpansion0 {
     static constexpr IType kLocalIterationCount =
         GetIterationCount<IType, LocalStart, LocalEnd, Inc,
@@ -145,8 +146,8 @@ class NAryTreeCEXForLoop {
     struct INone<UnusedType,
                  std::enable_if_t<kLocalIterationCount == 0, void>> {
       static constexpr FunctorOutputType kPriorOutput = {
-          LocalInitialDataFunctor::value,
-          NthTypeOfTuple<0, LocalTupleWithTypeEncodedNTTPs>::value};
+          LocalInitialNonCEXDataFunctor::value,
+          NthTypeOfTuple<0, LocalInitialTupleWithTypeEncodedNTTPs>::value};
 
       // NOLINTNEXTLINE(readability-identifier-naming)
       static constexpr auto kValue = kPriorOutput;
@@ -154,8 +155,8 @@ class NAryTreeCEXForLoop {
     template <typename UnusedType>
     struct I0<UnusedType, std::enable_if_t<kLocalIterationCount >= 1, void>> {
       static constexpr FunctorOutputType kPriorOutput = {
-          LocalInitialDataFunctor::value,
-          NthTypeOfTuple<0, LocalTupleWithTypeEncodedNTTPs>::value};
+          LocalInitialNonCEXDataFunctor::value,
+          NthTypeOfTuple<0, LocalInitialTupleWithTypeEncodedNTTPs>::value};
 
       // NOLINTNEXTLINE(readability-identifier-naming)
       static constexpr auto kValue =
@@ -312,8 +313,8 @@ class NAryTreeCEXForLoop {
   };
 
   template <IType LocalStart, IType LocalEnd,
-            typename LocalTupleWithTypeEncodedNTTPs,
-            typename LocalInitialDataFunctor>
+            typename LocalInitialTupleWithTypeEncodedNTTPs,
+            typename LocalInitialNonCEXDataFunctor>
   struct LinearExpansion1 {
     static constexpr IType kLocalIterationCount =
         GetIterationCount<IType, LocalStart, LocalEnd, Inc,
@@ -348,13 +349,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion0<
           GetExpansionStart<IType, LocalStart, Inc, 1, 0>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 0>(),
-          LocalTupleWithTypeEncodedNTTPs, LocalInitialDataFunctor>::func();
+          LocalInitialTupleWithTypeEncodedNTTPs,
+          LocalInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 11), void>> {
       static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -363,14 +365,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion0<
           GetExpansionStart<IType, LocalStart, Inc, 1, 1>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 1>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 21), void>> {
       static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -379,14 +381,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion0<
           GetExpansionStart<IType, LocalStart, Inc, 1, 2>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 2>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 31), void>> {
       static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -395,14 +397,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion0<
           GetExpansionStart<IType, LocalStart, Inc, 1, 3>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 3>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 41), void>> {
       static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -411,14 +413,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion0<
           GetExpansionStart<IType, LocalStart, Inc, 1, 4>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 4>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 51), void>> {
       static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -427,14 +429,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion0<
           GetExpansionStart<IType, LocalStart, Inc, 1, 5>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 5>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 61), void>> {
       static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -443,14 +445,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion0<
           GetExpansionStart<IType, LocalStart, Inc, 1, 6>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 6>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 71), void>> {
       static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -459,14 +461,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion0<
           GetExpansionStart<IType, LocalStart, Inc, 1, 7>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 7>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 81), void>> {
       static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -475,14 +477,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion0<
           GetExpansionStart<IType, LocalStart, Inc, 1, 8>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 8>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 91), void>> {
       static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -491,8 +493,8 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion0<
           GetExpansionStart<IType, LocalStart, Inc, 1, 9>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 9>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     // Create SFINAE function that returns the value from the last iteration
     template <IType LocalLocalIterationCount = kLocalIterationCount>
@@ -568,8 +570,8 @@ class NAryTreeCEXForLoop {
   };
 
   template <IType LocalStart, IType LocalEnd,
-            typename LocalTupleWithTypeEncodedNTTPs,
-            typename LocalInitialDataFunctor>
+            typename LocalInitialTupleWithTypeEncodedNTTPs,
+            typename LocalInitialNonCEXDataFunctor>
   struct LinearExpansion2 {
     static constexpr IType kLocalIterationCount =
         GetIterationCount<IType, LocalStart, LocalEnd, Inc,
@@ -604,13 +606,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion1<
           GetExpansionStart<IType, LocalStart, Inc, 2, 0>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 0>(),
-          LocalTupleWithTypeEncodedNTTPs, LocalInitialDataFunctor>::func();
+          LocalInitialTupleWithTypeEncodedNTTPs,
+          LocalInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 101), void>> {
       static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -619,14 +622,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion1<
           GetExpansionStart<IType, LocalStart, Inc, 2, 1>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 1>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 201), void>> {
       static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -635,14 +638,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion1<
           GetExpansionStart<IType, LocalStart, Inc, 2, 2>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 2>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 301), void>> {
       static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -651,14 +654,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion1<
           GetExpansionStart<IType, LocalStart, Inc, 2, 3>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 3>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 401), void>> {
       static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -667,14 +670,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion1<
           GetExpansionStart<IType, LocalStart, Inc, 2, 4>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 4>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 501), void>> {
       static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -683,14 +686,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion1<
           GetExpansionStart<IType, LocalStart, Inc, 2, 5>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 5>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 601), void>> {
       static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -699,14 +702,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion1<
           GetExpansionStart<IType, LocalStart, Inc, 2, 6>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 6>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 701), void>> {
       static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -715,14 +718,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion1<
           GetExpansionStart<IType, LocalStart, Inc, 2, 7>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 7>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 801), void>> {
       static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -731,14 +734,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion1<
           GetExpansionStart<IType, LocalStart, Inc, 2, 8>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 8>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 901), void>> {
       static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -747,8 +750,8 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion1<
           GetExpansionStart<IType, LocalStart, Inc, 2, 9>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 9>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     // Create SFINAE function that returns the value from the last iteration
     template <IType LocalLocalIterationCount = kLocalIterationCount>
@@ -824,8 +827,8 @@ class NAryTreeCEXForLoop {
   };
 
   template <IType LocalStart, IType LocalEnd,
-            typename LocalTupleWithTypeEncodedNTTPs,
-            typename LocalInitialDataFunctor>
+            typename LocalInitialTupleWithTypeEncodedNTTPs,
+            typename LocalInitialNonCEXDataFunctor>
   struct LinearExpansion3 {
     static constexpr IType kLocalIterationCount =
         GetIterationCount<IType, LocalStart, LocalEnd, Inc,
@@ -860,13 +863,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion2<
           GetExpansionStart<IType, LocalStart, Inc, 3, 0>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 0>(),
-          LocalTupleWithTypeEncodedNTTPs, LocalInitialDataFunctor>::func();
+          LocalInitialTupleWithTypeEncodedNTTPs,
+          LocalInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 1001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -875,14 +879,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion2<
           GetExpansionStart<IType, LocalStart, Inc, 3, 1>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 1>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 2001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -891,14 +895,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion2<
           GetExpansionStart<IType, LocalStart, Inc, 3, 2>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 2>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 3001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -907,14 +911,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion2<
           GetExpansionStart<IType, LocalStart, Inc, 3, 3>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 3>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 4001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -923,14 +927,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion2<
           GetExpansionStart<IType, LocalStart, Inc, 3, 4>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 4>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 5001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -939,14 +943,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion2<
           GetExpansionStart<IType, LocalStart, Inc, 3, 5>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 5>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 6001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -955,14 +959,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion2<
           GetExpansionStart<IType, LocalStart, Inc, 3, 6>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 6>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 7001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -971,14 +975,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion2<
           GetExpansionStart<IType, LocalStart, Inc, 3, 7>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 7>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 8001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -987,14 +991,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion2<
           GetExpansionStart<IType, LocalStart, Inc, 3, 8>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 8>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 9001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1003,8 +1007,8 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion2<
           GetExpansionStart<IType, LocalStart, Inc, 3, 9>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 9>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     // Create SFINAE function that returns the value from the last iteration
     template <IType LocalLocalIterationCount = kLocalIterationCount>
@@ -1080,8 +1084,8 @@ class NAryTreeCEXForLoop {
   };
 
   template <IType LocalStart, IType LocalEnd,
-            typename LocalTupleWithTypeEncodedNTTPs,
-            typename LocalInitialDataFunctor>
+            typename LocalInitialTupleWithTypeEncodedNTTPs,
+            typename LocalInitialNonCEXDataFunctor>
   struct LinearExpansion4 {
     static constexpr IType kLocalIterationCount =
         GetIterationCount<IType, LocalStart, LocalEnd, Inc,
@@ -1116,13 +1120,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion3<
           GetExpansionStart<IType, LocalStart, Inc, 4, 0>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 0>(),
-          LocalTupleWithTypeEncodedNTTPs, LocalInitialDataFunctor>::func();
+          LocalInitialTupleWithTypeEncodedNTTPs,
+          LocalInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 10001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1131,14 +1136,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion3<
           GetExpansionStart<IType, LocalStart, Inc, 4, 1>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 1>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 20001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1147,14 +1152,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion3<
           GetExpansionStart<IType, LocalStart, Inc, 4, 2>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 2>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 30001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1163,14 +1168,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion3<
           GetExpansionStart<IType, LocalStart, Inc, 4, 3>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 3>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 40001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1179,14 +1184,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion3<
           GetExpansionStart<IType, LocalStart, Inc, 4, 4>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 4>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 50001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1195,14 +1200,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion3<
           GetExpansionStart<IType, LocalStart, Inc, 4, 5>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 5>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 60001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1211,14 +1216,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion3<
           GetExpansionStart<IType, LocalStart, Inc, 4, 6>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 6>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 70001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1227,14 +1232,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion3<
           GetExpansionStart<IType, LocalStart, Inc, 4, 7>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 7>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 80001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1243,14 +1248,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion3<
           GetExpansionStart<IType, LocalStart, Inc, 4, 8>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 8>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 90001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1259,8 +1264,8 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion3<
           GetExpansionStart<IType, LocalStart, Inc, 4, 9>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 9>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     // Create SFINAE function that returns the value from the last iteration
     template <IType LocalLocalIterationCount = kLocalIterationCount>
@@ -1336,8 +1341,8 @@ class NAryTreeCEXForLoop {
   };
 
   template <IType LocalStart, IType LocalEnd,
-            typename LocalTupleWithTypeEncodedNTTPs,
-            typename LocalInitialDataFunctor>
+            typename LocalInitialTupleWithTypeEncodedNTTPs,
+            typename LocalInitialNonCEXDataFunctor>
   struct LinearExpansion5 {
     static constexpr IType kLocalIterationCount =
         GetIterationCount<IType, LocalStart, LocalEnd, Inc,
@@ -1372,13 +1377,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion4<
           GetExpansionStart<IType, LocalStart, Inc, 5, 0>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 0>(),
-          LocalTupleWithTypeEncodedNTTPs, LocalInitialDataFunctor>::func();
+          LocalInitialTupleWithTypeEncodedNTTPs,
+          LocalInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 100001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1387,14 +1393,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion4<
           GetExpansionStart<IType, LocalStart, Inc, 5, 1>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 1>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 200001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1403,14 +1409,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion4<
           GetExpansionStart<IType, LocalStart, Inc, 5, 2>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 2>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 300001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1419,14 +1425,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion4<
           GetExpansionStart<IType, LocalStart, Inc, 5, 3>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 3>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 400001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1435,14 +1441,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion4<
           GetExpansionStart<IType, LocalStart, Inc, 5, 4>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 4>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 500001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1451,14 +1457,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion4<
           GetExpansionStart<IType, LocalStart, Inc, 5, 5>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 5>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 600001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1467,14 +1473,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion4<
           GetExpansionStart<IType, LocalStart, Inc, 5, 6>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 6>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 700001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1483,14 +1489,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion4<
           GetExpansionStart<IType, LocalStart, Inc, 5, 7>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 7>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 800001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1499,14 +1505,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion4<
           GetExpansionStart<IType, LocalStart, Inc, 5, 8>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 8>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 900001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1515,8 +1521,8 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion4<
           GetExpansionStart<IType, LocalStart, Inc, 5, 9>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 9>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     // Create SFINAE function that returns the value from the last iteration
     template <IType LocalLocalIterationCount = kLocalIterationCount>
@@ -1592,8 +1598,8 @@ class NAryTreeCEXForLoop {
   };
 
   template <IType LocalStart, IType LocalEnd,
-            typename LocalTupleWithTypeEncodedNTTPs,
-            typename LocalInitialDataFunctor>
+            typename LocalInitialTupleWithTypeEncodedNTTPs,
+            typename LocalInitialNonCEXDataFunctor>
   struct LinearExpansion6 {
     static constexpr IType kLocalIterationCount =
         GetIterationCount<IType, LocalStart, LocalEnd, Inc,
@@ -1628,13 +1634,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion5<
           GetExpansionStart<IType, LocalStart, Inc, 6, 0>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 0>(),
-          LocalTupleWithTypeEncodedNTTPs, LocalInitialDataFunctor>::func();
+          LocalInitialTupleWithTypeEncodedNTTPs,
+          LocalInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 1000001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1643,14 +1650,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion5<
           GetExpansionStart<IType, LocalStart, Inc, 6, 1>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 1>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 2000001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1659,14 +1666,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion5<
           GetExpansionStart<IType, LocalStart, Inc, 6, 2>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 2>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 3000001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1675,14 +1682,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion5<
           GetExpansionStart<IType, LocalStart, Inc, 6, 3>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 3>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 4000001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1691,14 +1698,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion5<
           GetExpansionStart<IType, LocalStart, Inc, 6, 4>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 4>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 5000001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1707,14 +1714,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion5<
           GetExpansionStart<IType, LocalStart, Inc, 6, 5>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 5>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 6000001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1723,14 +1730,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion5<
           GetExpansionStart<IType, LocalStart, Inc, 6, 6>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 6>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 7000001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1739,14 +1746,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion5<
           GetExpansionStart<IType, LocalStart, Inc, 6, 7>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 7>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 8000001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1755,14 +1762,14 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion5<
           GetExpansionStart<IType, LocalStart, Inc, 6, 8>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 8>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     template <typename UnusedType>
     struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 9000001), void>> {
       static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
 
-      struct NextInitialDataFunctor {
+      struct NextInitialNonCEXDataFunctor {
         // NOLINTNEXTLINE(readability-identifier-naming)
         static constexpr FunctorData value = std::get<0>(kPriorOutput);
       };
@@ -1771,8 +1778,8 @@ class NAryTreeCEXForLoop {
       static constexpr auto kValue = LinearExpansion5<
           GetExpansionStart<IType, LocalStart, Inc, 6, 9>(),
           GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 9>(),
-          NextTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialDataFunctor>::func();
+          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
+          NextInitialNonCEXDataFunctor>::func();
     };
     // Create SFINAE function that returns the value from the last iteration
     template <IType LocalLocalIterationCount = kLocalIterationCount>
@@ -1849,8 +1856,8 @@ class NAryTreeCEXForLoop {
 
  public:
   static constexpr FunctorOutputType func() {
-    return LinearExpansion6<Start, End, TupleWithTypeEncodedNTTPs,
-                            InitialDataFunctor>::func();
+    return LinearExpansion6<Start, End, InitialTupleWithTypeEncodedNTTPs,
+                            InitialNonCEXDataFunctor>::func();
   }
 };
 

@@ -7,8 +7,9 @@ namespace cex_for_loop {
 
 template <typename IType, IType Start, IType End, IType Inc,
           typename BoolExpressionFunctor, typename BodyFunctor,
-          typename TupleWithTypeEncodedNTTPs, typename InitialDataFunctor>
-constexpr typename BodyFunctor::NonConstexprData constexpr_for() {
+          typename InitialTupleWithTypeEncodedNTTPs,
+          typename InitialNonCEXDataFunctor>
+constexpr typename BodyFunctor::NonConstexprData func() {
   static_assert(!static_cast<bool>(std::is_const<IType>().value),
                 "User provided type may NOT be const qualified.");
   static_assert(!static_cast<bool>(std::is_volatile<IType>().value),
@@ -21,8 +22,8 @@ constexpr typename BodyFunctor::NonConstexprData constexpr_for() {
 
   return std::get<0>(
       impl::NAryTreeCEXForLoop<IType, Start, End, Inc, BoolExpressionFunctor,
-                               BodyFunctor, TupleWithTypeEncodedNTTPs,
-                               InitialDataFunctor>::func());
+                               BodyFunctor, InitialTupleWithTypeEncodedNTTPs,
+                               InitialNonCEXDataFunctor>::func());
 };
 
 }  // namespace cex_for_loop
