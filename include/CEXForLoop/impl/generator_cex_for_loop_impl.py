@@ -16,7 +16,7 @@ def get_lower_bound(linear_expansion_length, n, i):
 def get_upper_bound(linear_expansion_length, n, i):
     return int(1 + ((i+1) * math.pow(linear_expansion_length, n)))
 
-def generate_header_file(file_path, linear_expansion_length, linear_expansion_count):
+def generate_header_file(file_path, max_nttp_count, linear_expansion_length, linear_expansion_count):
     file_name = os.path.basename(file_path)
     # Insert a "_IMPL" at the end of the file name
     header_guard_split = file_name.upper().rsplit('.', 1)
@@ -41,6 +41,7 @@ def generate_header_file(file_path, linear_expansion_length, linear_expansion_co
         f.write("#include <tuple>\n")
         f.write("#include <type_traits>\n\n")
         f.write("#include \"../bool_expression_functors.h\"\n")
+        f.write("#include \"../type_encoded_nttps_helper.h\"\n")
         f.write("\n")
 
         # Write the namespaces
@@ -117,145 +118,175 @@ def generate_header_file(file_path, linear_expansion_length, linear_expansion_co
         f.write("template <std::size_t N, typename TupleType>\n")
         f.write("using NthTypeOfTuple = typename std::tuple_element<N, TupleType>::type;\n\n")
 
-        f.write("template <typename IType, IType Start, IType End, IType Inc,\n")
-        f.write("          typename BoolExpressionFunctor, typename BodyFunctor,\n")
-        f.write("          typename InitialTupleWithTypeEncodedNTTPs,\n")
-        f.write("          typename InitialNonCEXDataFunctor>\n")
-        f.write("class NAryTreeCEXForLoop {\n")
-        f.write(" private:\n")
+        f.write("// Declare non-specialized template enabling selection of implementation\n")
+        f.write("// depending on the number of NTTPs\n")
+        f.write("template <typename BodyFunctor,\n")
+        f.write("          std::size_t NTTPCount =\n")
+        f.write("              std::tuple_size<typename BodyFunctor::OutputType>::value - 1>\n")
+        f.write("struct NAryTreeCEXForLoop;\n\n")
 
-        f.write("  using FunctorData = typename BodyFunctor::NonConstexprData;\n")
-        f.write("  using FunctorOutputType = typename BodyFunctor::OutputType;\n\n")
+        for t in range(max_nttp_count):
+            f.write("template <typename BodyFunctor>\n")
+            f.write(f"struct NAryTreeCEXForLoop<BodyFunctor, {t}> {{\n")
 
-        f.write("  static_assert(\n")
-        f.write(f"      IntegralPow({linear_expansion_length}, {linear_expansion_count}) >=\n")
-        f.write("          GetIterationCount<IType, Start, End, Inc, BoolExpressionFunctor>(),\n")
-        f.write("      \"Requested iteration is greater than supported maximum iteration \"\n")
-        f.write("      \"count\");\n")
+            f.write("  template <typename IType, IType Start, IType End, IType Inc,\n")
+            f.write("            typename BoolExpressionFunctor,\n")
+            f.write("            typename InitialTupleWithTypeEncodedNTTPs,\n")
+            f.write("            typename InitialNonCEXDataFunctor>\n")
+            f.write("  class With {\n")
+            f.write("   private:\n")
 
-        f.write("  // clang-format off\n")
-        f.write("  template <NthTypeOfTuple<1, FunctorOutputType> NTTP0Value>\n")
-        f.write("  using NextInitialTupleWithTypeEncodedNTTPs = std::tuple<\n")
-        f.write("      std::integral_constant<NthTypeOfTuple<1, FunctorOutputType>, NTTP0Value>\n")
-        f.write("      >;\n")
-        f.write("  // clang-format on\n\n")
+            f.write("    using FunctorData = typename BodyFunctor::NonConstexprData;\n")
+            f.write("    using FunctorOutputType = typename BodyFunctor::OutputType;\n\n")
 
-        for n in range(linear_expansion_count):
-            f.write("  template <IType LocalStart, IType LocalEnd,\n")
-            f.write("            typename LocalInitialTupleWithTypeEncodedNTTPs,\n")
-            f.write("            typename LocalInitialNonCEXDataFunctor>\n")
-            f.write(f"  struct LinearExpansion{n} {{\n")
-            f.write("    static constexpr IType kLocalIterationCount =\n")
-            f.write("        GetIterationCount<IType, LocalStart, LocalEnd, Inc,\n")
-            f.write("                          BoolExpressionFunctor>();\n\n")
+            f.write("    static_assert(\n")
+            f.write(f"        IntegralPow({linear_expansion_length}, {linear_expansion_count}) >=\n")
+            f.write("            GetIterationCount<IType, Start, End, Inc, BoolExpressionFunctor>(),\n")
+            f.write("        \"Requested iteration is greater than supported maximum iteration \"\n")
+            f.write("        \"count\");\n\n")
 
-            f.write(f"    // Forward-declare iteration structs for partial template specialization\n")
-            f.write("    // SFINAE\n")
-            if n == 0:
-                f.write("    template <typename UnusedType = void, typename Picker = void>\n")
-                f.write("    struct INone;\n")
-            for i in range(linear_expansion_length):
-                f.write("    template <typename UnusedType = void, typename Picker = void>\n")
-                f.write(f"    struct I{i};\n")
-            f.write("\n")
+            for n in range(linear_expansion_count):
+                f.write("    template <IType LocalStart, IType LocalEnd,\n")
+                f.write("              typename LocalInitialTupleWithTypeEncodedNTTPs,\n")
+                f.write("              typename LocalInitialNonCEXDataFunctor>\n")
+                f.write(f"    struct LinearExpansion{n} {{\n")
+                f.write("      static constexpr IType kLocalIterationCount =\n")
+                f.write("          GetIterationCount<IType, LocalStart, LocalEnd, Inc,\n")
+                f.write("                            BoolExpressionFunctor>();\n\n")
 
-            if n == 0:
-                f.write("    // Define pratial template specializations for base iteration structs that\n")
-                f.write("    // conditionaly instantiate the user BodyFunctor based on iteration count\n")
-                f.write("    template <typename UnusedType>\n")
-                f.write("    struct INone<UnusedType,\n")
-                f.write("                 std::enable_if_t<kLocalIterationCount == 0, void>> {\n")
-                f.write("      static constexpr FunctorOutputType kPriorOutput = {\n")
-                f.write("          LocalInitialNonCEXDataFunctor::value,\n")
-                f.write("          NthTypeOfTuple<0, LocalInitialTupleWithTypeEncodedNTTPs>::value};\n")
-                f.write("\n")
-                f.write("      // NOLINTNEXTLINE(readability-identifier-naming)\n")
-                f.write("      static constexpr auto kValue = kPriorOutput;\n")
-                f.write("    };\n")
+                f.write(f"      // Forward-declare iteration structs for partial template specialization\n")
+                f.write("      // SFINAE\n")
+                if n == 0:
+                    f.write("      template <typename UnusedType = void, typename Picker = void>\n")
+                    f.write("      struct INone;\n")
                 for i in range(linear_expansion_length):
-                    f.write("    template <typename UnusedType>\n")
-                    f.write(f"    struct I{i}<UnusedType, std::enable_if_t<kLocalIterationCount >= {i+1}, void>> {{\n")
-                    if i == 0:
-                        f.write("      static constexpr FunctorOutputType kPriorOutput = {\n")
-                        f.write("          LocalInitialNonCEXDataFunctor::value,\n")
-                        f.write("          NthTypeOfTuple<0, LocalInitialTupleWithTypeEncodedNTTPs>::value};\n")
-                    else:
-                        f.write(f"      static constexpr FunctorOutputType kPriorOutput = I{i-1}<>::kValue;\n")
-                    f.write("\n")
+                    f.write("      template <typename UnusedType = void, typename Picker = void>\n")
+                    f.write(f"      struct I{i};\n")
+                f.write("  \n")
 
-                    f.write("      // NOLINTNEXTLINE(readability-identifier-naming)\n")
-                    f.write("      static constexpr auto kValue =\n")
-                    f.write(f"          BodyFunctor::template func<(LocalStart + {i}),\n")
-                    f.write("                                     std::get<1>(kPriorOutput)>(\n")
-                    f.write("              std::get<0>(kPriorOutput));\n")
+                if n == 0:
+                    f.write("      // Define pratial template specializations for base iteration structs that\n")
+                    f.write("      // conditionaly instantiate the user BodyFunctor based on iteration count\n")
+                    f.write("      template <typename UnusedType>\n")
+                    f.write("      struct INone<UnusedType,\n")
+                    f.write("                   std::enable_if_t<kLocalIterationCount == 0, void>> {\n")
+                    f.write("        static constexpr FunctorOutputType kPriorOutput = {\n")
+                    f.write("            LocalInitialNonCEXDataFunctor::value")
+                    if t != 0:
+                        f.write(",\n")
+                    for y in range(t):
+                        f.write(f"            NthTypeOfTuple<{y}, LocalInitialTupleWithTypeEncodedNTTPs>::value")
+                        if y != t - 1:
+                            f.write(",\n")
+                    f.write("};\n")
+                    f.write("  \n")
+                    f.write("        // NOLINTNEXTLINE(readability-identifier-naming)\n")
+                    f.write("        static constexpr auto kValue = kPriorOutput;\n")
+                    f.write("      };\n")
+                    for i in range(linear_expansion_length):
+                        f.write("      template <typename UnusedType>\n")
+                        f.write(f"      struct I{i}<UnusedType, std::enable_if_t<kLocalIterationCount >= {i+1}, void>> {{\n")
+                        if i == 0:
+                            f.write("        static constexpr FunctorOutputType kPriorOutput = {\n")
+                            f.write("            LocalInitialNonCEXDataFunctor::value")
+                            if t != 0:
+                                f.write(",\n")
+                            for y in range(t):
+                                f.write(f"            NthTypeOfTuple<{y}, LocalInitialTupleWithTypeEncodedNTTPs>::value")
+                                if y != t - 1:
+                                    f.write(",\n")
+                            f.write("};\n")
+                        else:
+                            f.write(f"        static constexpr FunctorOutputType kPriorOutput = I{i-1}<>::kValue;\n")
+                        f.write("  \n")
+
+                        f.write("        // NOLINTNEXTLINE(readability-identifier-naming)\n")
+                        f.write("        static constexpr auto kValue =\n")
+                        f.write(f"            BodyFunctor::template func<(LocalStart + {i})")
+                        if t != 0:
+                            f.write(",\n")
+                        for y in range(t):
+                            f.write(f"                                       std::get<{y+1}>(kPriorOutput)")
+                            if y != t - 1:
+                                f.write(",\n")
+                        f.write(">(\n")
+                        f.write("                std::get<0>(kPriorOutput));\n")
+                        f.write("      };\n")
+
+                    f.write("      // Create SFINAE function that returns the value from the last iteration\n")
+                    f.write("      template <IType LocalLocalIterationCount = kLocalIterationCount>\n")
+                    f.write("      static constexpr auto func()\n")
+                    f.write(f"          -> std::enable_if_t<LocalLocalIterationCount == 0, FunctorOutputType> {{\n")
+                    f.write("        return INone<>::kValue;\n")
+                    f.write("      }\n")
+                    for i in range(linear_expansion_length):
+                        f.write("      template <IType LocalLocalIterationCount = kLocalIterationCount>\n")
+                        f.write("      static constexpr auto func()\n")
+                        f.write(f"          -> std::enable_if_t<LocalLocalIterationCount == {i+1}, FunctorOutputType> {{\n")
+                        f.write(f"        return I{i}<>::kValue;\n")
+                        f.write("      }\n")
+                    f.write("    };\n\n")
+                else:
+                    for i in range(linear_expansion_length):
+                        f.write("      template <typename UnusedType>\n")
+                        f.write(f"      struct I{i}<UnusedType, std::enable_if_t<(kLocalIterationCount >= {get_lower_bound(linear_expansion_length, n, i)}), void>> {{\n")
+                        if i == 0:
+                            f.write("        // NOLINTNEXTLINE(readability-identifier-naming)\n")
+                            f.write(f"        static constexpr auto kValue = LinearExpansion{n-1}<\n")
+                            f.write(f"            GetExpansionStart<IType, LocalStart, Inc, {n}, {i}>(),\n")
+                            f.write(f"            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, {n}, {i}>(),\n")
+                            f.write("            LocalInitialTupleWithTypeEncodedNTTPs,\n")
+                            f.write("            LocalInitialNonCEXDataFunctor>::func();\n")
+                            f.write("      };\n")
+                        else:
+                            f.write(f"        static constexpr FunctorOutputType kPriorOutput = I{i-1}<>::kValue;\n\n")
+
+                            f.write("        struct NextInitialNonCEXDataFunctor {\n")
+                            f.write("          // NOLINTNEXTLINE(readability-identifier-naming)\n")
+                            f.write("          static constexpr FunctorData value = std::get<0>(kPriorOutput);\n")
+                            f.write("        };\n\n")
+
+                            f.write("        // NOLINTNEXTLINE(readability-identifier-naming)\n")
+                            f.write(f"        static constexpr auto kValue = LinearExpansion{n-1}<\n")
+                            f.write(f"            GetExpansionStart<IType, LocalStart, Inc, {n}, {i}>(),\n")
+                            f.write(f"            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, {n}, {i}>(),\n")
+                            f.write("            typename TypeEncodedNTTPs<BodyFunctor>::template type<\n")
+                            for y in range(t):
+                                f.write(f"                std::get<{y + 1}>(kPriorOutput)")
+                                if y != t - 1:
+                                    f.write(",\n")
+                            f.write(">,\n")
+                            f.write("            NextInitialNonCEXDataFunctor>::func();\n")
+                            f.write("      };\n")
+
+                    f.write("      // Create SFINAE function that returns the value from the last iteration\n")
+                    for i in range(linear_expansion_length):
+                        f.write("      template <IType LocalLocalIterationCount = kLocalIterationCount>\n")
+                        f.write("      static constexpr auto func()\n")
+                        f.write(f"          -> std::enable_if_t<(LocalLocalIterationCount >= {get_lower_bound(linear_expansion_length, n, i)}) &&\n")
+                        f.write(f"                                  (LocalLocalIterationCount < {get_upper_bound(linear_expansion_length, n, i)}),\n")
+                        f.write("                              FunctorOutputType> {\n")
+                        f.write(f"        return I{i}<>::kValue;\n")
+                        f.write("      }\n")
+
                     f.write("    };\n")
 
-                f.write("    // Create SFINAE function that returns the value from the last iteration\n")
-                f.write("    template <IType LocalLocalIterationCount = kLocalIterationCount>\n")
-                f.write("    static constexpr auto func()\n")
-                f.write(f"        -> std::enable_if_t<LocalLocalIterationCount == 0, FunctorOutputType> {{\n")
-                f.write("      return INone<>::kValue;\n")
-                f.write("    }\n")
-                for i in range(linear_expansion_length):
-                    f.write("    template <IType LocalLocalIterationCount = kLocalIterationCount>\n")
-                    f.write("    static constexpr auto func()\n")
-                    f.write(f"        -> std::enable_if_t<LocalLocalIterationCount == {i+1}, FunctorOutputType> {{\n")
-                    f.write(f"      return I{i}<>::kValue;\n")
-                    f.write("    }\n")
-                f.write("  };\n\n")
-            else:
-                for i in range(linear_expansion_length):
-                    f.write("    template <typename UnusedType>\n")
-                    f.write(f"    struct I{i}<UnusedType, std::enable_if_t<(kLocalIterationCount >= {get_lower_bound(linear_expansion_length, n, i)}), void>> {{\n")
-                    if i == 0:
-                        f.write("      // NOLINTNEXTLINE(readability-identifier-naming)\n")
-                        f.write(f"      static constexpr auto kValue = LinearExpansion{n-1}<\n")
-                        f.write(f"          GetExpansionStart<IType, LocalStart, Inc, {n}, {i}>(),\n")
-                        f.write(f"          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, {n}, {i}>(),\n")
-                        f.write("          LocalInitialTupleWithTypeEncodedNTTPs,\n")
-                        f.write("          LocalInitialNonCEXDataFunctor>::func();\n")
-                        f.write("    };\n")
-                    else:
-                        f.write(f"      static constexpr FunctorOutputType kPriorOutput = I{i-1}<>::kValue;\n\n")
+            # Provide the interface
+            f.write("   public:\n")
+            f.write("    static constexpr FunctorOutputType func() {\n")
+            f.write("      return LinearExpansion6<Start, End, InitialTupleWithTypeEncodedNTTPs,\n")
+            f.write("                              InitialNonCEXDataFunctor>::func();\n")
+            f.write("    }\n")
+            f.write("  };\n")
 
-                        f.write("      struct NextInitialNonCEXDataFunctor {\n")
-                        f.write("        // NOLINTNEXTLINE(readability-identifier-naming)\n")
-                        f.write("        static constexpr FunctorData value = std::get<0>(kPriorOutput);\n")
-                        f.write("      };\n\n")
+            # Close this NTTP Count's struct
+            f.write("};\n\n")
 
-                        f.write("      // NOLINTNEXTLINE(readability-identifier-naming)\n")
-                        f.write(f"      static constexpr auto kValue = LinearExpansion{n-1}<\n")
-                        f.write(f"          GetExpansionStart<IType, LocalStart, Inc, {n}, {i}>(),\n")
-                        f.write(f"          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, {n}, {i}>(),\n")
-                        f.write("          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,\n")
-                        f.write("          NextInitialNonCEXDataFunctor>::func();\n")
-                        f.write("    };\n")
-
-                f.write("    // Create SFINAE function that returns the value from the last iteration\n")
-                for i in range(linear_expansion_length):
-                    f.write("    template <IType LocalLocalIterationCount = kLocalIterationCount>\n")
-                    f.write("    static constexpr auto func()\n")
-                    f.write(f"        -> std::enable_if_t<(LocalLocalIterationCount >= {get_lower_bound(linear_expansion_length, n, i)}) &&\n")
-                    f.write(f"                                (LocalLocalIterationCount < {get_upper_bound(linear_expansion_length, n, i)}),\n")
-                    f.write("                            FunctorOutputType> {\n")
-                    f.write(f"      return I{i}<>::kValue;\n")
-                    f.write("    }\n")
-
-                f.write("  };\n\n")
-
-        # Provide the interface
-        f.write(" public:\n")
-        f.write("  static constexpr FunctorOutputType func() {\n")
-        f.write("    return LinearExpansion6<Start, End, InitialTupleWithTypeEncodedNTTPs,\n")
-        f.write("                            InitialNonCEXDataFunctor>::func();\n")
-        f.write("  }\n")
-
-        # Close the struct, namespaces, and header guard
-        f.write("};\n\n")  # Close LinearCEXForFunctor
+        # Close the namespaces and header guard
         f.write("}  // namespace impl\n")
         f.write("}  // namespace cex_for_loop\n\n")
         f.write(f"#endif  // {header_guard}\n")
 
 gen_file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "nary_tree_cex_for_loop.h")
 
-generate_header_file(gen_file_path, 10, 7)  # max iteration count = second_last_param**(last_param)
+generate_header_file(gen_file_path, 3, 10, 7)  # max iteration count = second_last_param**(last_param)
