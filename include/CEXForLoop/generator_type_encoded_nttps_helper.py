@@ -29,6 +29,11 @@ def generate_header_file(file_path, MaxNTTPCount):
         f.write("              std::tuple_size<typename BodyFunctor::OutputType>::value - 1>\n")
         f.write("struct TypeEncodedNTTPs;\n\n")
 
+        f.write("template <typename BodyFunctor>\n")
+        f.write("struct TypeEncodedNTTPs<BodyFunctor, 0> {\n")
+        f.write("  using type = std::tuple<>;\n")
+        f.write("};\n\n")
+
         for i in range(MaxNTTPCount):
             f.write("template <typename BodyFunctor>\n")
             f.write(f"struct TypeEncodedNTTPs<BodyFunctor, {i + 1}> {{\n")
@@ -56,4 +61,4 @@ def generate_header_file(file_path, MaxNTTPCount):
 
 gen_file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "type_encoded_nttps_helper.h")
 
-generate_header_file(gen_file_path, 150)
+generate_header_file(gen_file_path, 15)

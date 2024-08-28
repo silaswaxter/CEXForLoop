@@ -22,9 +22,9 @@ constexpr typename BodyFunctor::NonConstexprData func() {
   //               "User provided type must be signed integer.");
 
   return std::get<0>(
-      impl::NAryTreeCEXForLoop<IType, Start, End, Inc, BoolExpressionFunctor,
-                               BodyFunctor, InitialTupleWithTypeEncodedNTTPs,
-                               InitialNonCEXDataFunctor>::func());
+      impl::NAryTreeCEXForLoop<BodyFunctor>::template With<
+          IType, Start, End, Inc, BoolExpressionFunctor,
+          InitialTupleWithTypeEncodedNTTPs, InitialNonCEXDataFunctor>::func());
 };
 
 }  // namespace cex_for_loop

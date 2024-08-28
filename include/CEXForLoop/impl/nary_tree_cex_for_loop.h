@@ -15,6 +15,7 @@
 #include <type_traits>
 
 #include "../bool_expression_functors.h"
+#include "../type_encoded_nttps_helper.h"
 
 namespace cex_for_loop {
 namespace impl {
@@ -86,1779 +87,5525 @@ constexpr IType GetExpansionEnd() {
 template <std::size_t N, typename TupleType>
 using NthTypeOfTuple = typename std::tuple_element<N, TupleType>::type;
 
-template <typename IType, IType Start, IType End, IType Inc,
-          typename BoolExpressionFunctor, typename BodyFunctor,
-          typename InitialTupleWithTypeEncodedNTTPs,
-          typename InitialNonCEXDataFunctor>
-class NAryTreeCEXForLoop {
- private:
-  using FunctorData = typename BodyFunctor::NonConstexprData;
-  using FunctorOutputType = typename BodyFunctor::OutputType;
+// Declare non-specialized template enabling selection of implementation
+// depending on the number of NTTPs
+template <typename BodyFunctor,
+          std::size_t NTTPCount =
+              std::tuple_size<typename BodyFunctor::OutputType>::value - 1>
+struct NAryTreeCEXForLoop;
 
-  static_assert(
-      IntegralPow(10, 7) >=
-          GetIterationCount<IType, Start, End, Inc, BoolExpressionFunctor>(),
-      "Requested iteration is greater than supported maximum iteration "
-      "count");
-  // clang-format off
-  template <NthTypeOfTuple<1, FunctorOutputType> NTTP0Value>
-  using NextInitialTupleWithTypeEncodedNTTPs = std::tuple<
-      std::integral_constant<NthTypeOfTuple<1, FunctorOutputType>, NTTP0Value>
-      >;
-  // clang-format on
+template <typename BodyFunctor>
+struct NAryTreeCEXForLoop<BodyFunctor, 0> {
+  template <typename IType, IType Start, IType End, IType Inc,
+            typename BoolExpressionFunctor,
+            typename InitialTupleWithTypeEncodedNTTPs,
+            typename InitialNonCEXDataFunctor>
+  class With {
+   private:
+    using FunctorData = typename BodyFunctor::NonConstexprData;
+    using FunctorOutputType = typename BodyFunctor::OutputType;
 
-  template <IType LocalStart, IType LocalEnd,
-            typename LocalInitialTupleWithTypeEncodedNTTPs,
-            typename LocalInitialNonCEXDataFunctor>
-  struct LinearExpansion0 {
-    static constexpr IType kLocalIterationCount =
-        GetIterationCount<IType, LocalStart, LocalEnd, Inc,
-                          BoolExpressionFunctor>();
+    static_assert(
+        IntegralPow(10, 7) >=
+            GetIterationCount<IType, Start, End, Inc, BoolExpressionFunctor>(),
+        "Requested iteration is greater than supported maximum iteration "
+        "count");
 
-    // Forward-declare iteration structs for partial template specialization
-    // SFINAE
-    template <typename UnusedType = void, typename Picker = void>
-    struct INone;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I0;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I1;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I2;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I3;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I4;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I5;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I6;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I7;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I8;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I9;
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion0 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
 
-    // Define pratial template specializations for base iteration structs that
-    // conditionaly instantiate the user BodyFunctor based on iteration count
-    template <typename UnusedType>
-    struct INone<UnusedType,
-                 std::enable_if_t<kLocalIterationCount == 0, void>> {
-      static constexpr FunctorOutputType kPriorOutput = {
-          LocalInitialNonCEXDataFunctor::value,
-          NthTypeOfTuple<0, LocalInitialTupleWithTypeEncodedNTTPs>::value};
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = kPriorOutput;
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct INone;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      // Define pratial template specializations for base iteration structs that
+      // conditionaly instantiate the user BodyFunctor based on iteration count
+      template <typename UnusedType>
+      struct INone<UnusedType,
+                   std::enable_if_t<kLocalIterationCount == 0, void>> {
+        static constexpr FunctorOutputType kPriorOutput = {
+            LocalInitialNonCEXDataFunctor::value};
+  
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = kPriorOutput;
+      };
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<kLocalIterationCount >= 1, void>> {
+        static constexpr FunctorOutputType kPriorOutput = {
+            LocalInitialNonCEXDataFunctor::value};
+  
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 0)>(
+                std::get<0>(kPriorOutput));
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<kLocalIterationCount >= 2, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+  
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 1)>(
+                std::get<0>(kPriorOutput));
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<kLocalIterationCount >= 3, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+  
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 2)>(
+                std::get<0>(kPriorOutput));
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<kLocalIterationCount >= 4, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+  
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 3)>(
+                std::get<0>(kPriorOutput));
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<kLocalIterationCount >= 5, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+  
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 4)>(
+                std::get<0>(kPriorOutput));
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<kLocalIterationCount >= 6, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+  
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 5)>(
+                std::get<0>(kPriorOutput));
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<kLocalIterationCount >= 7, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+  
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 6)>(
+                std::get<0>(kPriorOutput));
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<kLocalIterationCount >= 8, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+  
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 7)>(
+                std::get<0>(kPriorOutput));
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<kLocalIterationCount >= 9, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+  
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 8)>(
+                std::get<0>(kPriorOutput));
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<kLocalIterationCount >= 10, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+  
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 9)>(
+                std::get<0>(kPriorOutput));
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 0, FunctorOutputType> {
+        return INone<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 1, FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 2, FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 3, FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 4, FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 5, FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 6, FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 7, FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 8, FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 9, FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 10, FunctorOutputType> {
+        return I9<>::kValue;
+      }
     };
-    template <typename UnusedType>
-    struct I0<UnusedType, std::enable_if_t<kLocalIterationCount >= 1, void>> {
-      static constexpr FunctorOutputType kPriorOutput = {
-          LocalInitialNonCEXDataFunctor::value,
-          NthTypeOfTuple<0, LocalInitialTupleWithTypeEncodedNTTPs>::value};
 
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue =
-          BodyFunctor::template func<(LocalStart + 0),
-                                     std::get<1>(kPriorOutput)>(
-              std::get<0>(kPriorOutput));
-    };
-    template <typename UnusedType>
-    struct I1<UnusedType, std::enable_if_t<kLocalIterationCount >= 2, void>> {
-      static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion1 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
 
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue =
-          BodyFunctor::template func<(LocalStart + 1),
-                                     std::get<1>(kPriorOutput)>(
-              std::get<0>(kPriorOutput));
-    };
-    template <typename UnusedType>
-    struct I2<UnusedType, std::enable_if_t<kLocalIterationCount >= 3, void>> {
-      static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 11), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
 
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue =
-          BodyFunctor::template func<(LocalStart + 2),
-                                     std::get<1>(kPriorOutput)>(
-              std::get<0>(kPriorOutput));
-    };
-    template <typename UnusedType>
-    struct I3<UnusedType, std::enable_if_t<kLocalIterationCount >= 4, void>> {
-      static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
 
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue =
-          BodyFunctor::template func<(LocalStart + 3),
-                                     std::get<1>(kPriorOutput)>(
-              std::get<0>(kPriorOutput));
-    };
-    template <typename UnusedType>
-    struct I4<UnusedType, std::enable_if_t<kLocalIterationCount >= 5, void>> {
-      static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 21), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
 
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue =
-          BodyFunctor::template func<(LocalStart + 4),
-                                     std::get<1>(kPriorOutput)>(
-              std::get<0>(kPriorOutput));
-    };
-    template <typename UnusedType>
-    struct I5<UnusedType, std::enable_if_t<kLocalIterationCount >= 6, void>> {
-      static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
 
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue =
-          BodyFunctor::template func<(LocalStart + 5),
-                                     std::get<1>(kPriorOutput)>(
-              std::get<0>(kPriorOutput));
-    };
-    template <typename UnusedType>
-    struct I6<UnusedType, std::enable_if_t<kLocalIterationCount >= 7, void>> {
-      static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 31), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
 
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue =
-          BodyFunctor::template func<(LocalStart + 6),
-                                     std::get<1>(kPriorOutput)>(
-              std::get<0>(kPriorOutput));
-    };
-    template <typename UnusedType>
-    struct I7<UnusedType, std::enable_if_t<kLocalIterationCount >= 8, void>> {
-      static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
 
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue =
-          BodyFunctor::template func<(LocalStart + 7),
-                                     std::get<1>(kPriorOutput)>(
-              std::get<0>(kPriorOutput));
-    };
-    template <typename UnusedType>
-    struct I8<UnusedType, std::enable_if_t<kLocalIterationCount >= 9, void>> {
-      static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 41), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
 
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue =
-          BodyFunctor::template func<(LocalStart + 8),
-                                     std::get<1>(kPriorOutput)>(
-              std::get<0>(kPriorOutput));
-    };
-    template <typename UnusedType>
-    struct I9<UnusedType, std::enable_if_t<kLocalIterationCount >= 10, void>> {
-      static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
 
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue =
-          BodyFunctor::template func<(LocalStart + 9),
-                                     std::get<1>(kPriorOutput)>(
-              std::get<0>(kPriorOutput));
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 51), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 61), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 71), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 81), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 91), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 11),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 11) &&
+                                  (LocalLocalIterationCount < 21),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 21) &&
+                                  (LocalLocalIterationCount < 31),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 31) &&
+                                  (LocalLocalIterationCount < 41),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 41) &&
+                                  (LocalLocalIterationCount < 51),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 51) &&
+                                  (LocalLocalIterationCount < 61),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 61) &&
+                                  (LocalLocalIterationCount < 71),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 71) &&
+                                  (LocalLocalIterationCount < 81),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 81) &&
+                                  (LocalLocalIterationCount < 91),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 91) &&
+                                  (LocalLocalIterationCount < 101),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
     };
-    // Create SFINAE function that returns the value from the last iteration
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<LocalLocalIterationCount == 0, FunctorOutputType> {
-      return INone<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<LocalLocalIterationCount == 1, FunctorOutputType> {
-      return I0<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<LocalLocalIterationCount == 2, FunctorOutputType> {
-      return I1<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<LocalLocalIterationCount == 3, FunctorOutputType> {
-      return I2<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<LocalLocalIterationCount == 4, FunctorOutputType> {
-      return I3<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<LocalLocalIterationCount == 5, FunctorOutputType> {
-      return I4<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<LocalLocalIterationCount == 6, FunctorOutputType> {
-      return I5<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<LocalLocalIterationCount == 7, FunctorOutputType> {
-      return I6<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<LocalLocalIterationCount == 8, FunctorOutputType> {
-      return I7<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<LocalLocalIterationCount == 9, FunctorOutputType> {
-      return I8<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<LocalLocalIterationCount == 10, FunctorOutputType> {
-      return I9<>::kValue;
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion2 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 101), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 201), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 301), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 401), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 501), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 601), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 701), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 801), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 901), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 101),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 101) &&
+                                  (LocalLocalIterationCount < 201),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 201) &&
+                                  (LocalLocalIterationCount < 301),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 301) &&
+                                  (LocalLocalIterationCount < 401),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 401) &&
+                                  (LocalLocalIterationCount < 501),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 501) &&
+                                  (LocalLocalIterationCount < 601),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 601) &&
+                                  (LocalLocalIterationCount < 701),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 701) &&
+                                  (LocalLocalIterationCount < 801),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 801) &&
+                                  (LocalLocalIterationCount < 901),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 901) &&
+                                  (LocalLocalIterationCount < 1001),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion3 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 1001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 2001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 3001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 4001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 5001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 6001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 7001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 8001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 9001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 1001),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 1001) &&
+                                  (LocalLocalIterationCount < 2001),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 2001) &&
+                                  (LocalLocalIterationCount < 3001),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 3001) &&
+                                  (LocalLocalIterationCount < 4001),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 4001) &&
+                                  (LocalLocalIterationCount < 5001),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 5001) &&
+                                  (LocalLocalIterationCount < 6001),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 6001) &&
+                                  (LocalLocalIterationCount < 7001),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 7001) &&
+                                  (LocalLocalIterationCount < 8001),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 8001) &&
+                                  (LocalLocalIterationCount < 9001),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 9001) &&
+                                  (LocalLocalIterationCount < 10001),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion4 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 10001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 20001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 30001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 40001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 50001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 60001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 70001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 80001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 90001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 10001),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 10001) &&
+                                  (LocalLocalIterationCount < 20001),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 20001) &&
+                                  (LocalLocalIterationCount < 30001),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 30001) &&
+                                  (LocalLocalIterationCount < 40001),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 40001) &&
+                                  (LocalLocalIterationCount < 50001),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 50001) &&
+                                  (LocalLocalIterationCount < 60001),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 60001) &&
+                                  (LocalLocalIterationCount < 70001),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 70001) &&
+                                  (LocalLocalIterationCount < 80001),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 80001) &&
+                                  (LocalLocalIterationCount < 90001),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 90001) &&
+                                  (LocalLocalIterationCount < 100001),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion5 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 100001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 200001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 300001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 400001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 500001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 600001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 700001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 800001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 900001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 100001),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 100001) &&
+                                  (LocalLocalIterationCount < 200001),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 200001) &&
+                                  (LocalLocalIterationCount < 300001),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 300001) &&
+                                  (LocalLocalIterationCount < 400001),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 400001) &&
+                                  (LocalLocalIterationCount < 500001),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 500001) &&
+                                  (LocalLocalIterationCount < 600001),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 600001) &&
+                                  (LocalLocalIterationCount < 700001),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 700001) &&
+                                  (LocalLocalIterationCount < 800001),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 800001) &&
+                                  (LocalLocalIterationCount < 900001),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 900001) &&
+                                  (LocalLocalIterationCount < 1000001),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion6 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 1000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 2000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 3000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 4000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 5000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 6000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 7000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 8000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 9000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 1000001),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 1000001) &&
+                                  (LocalLocalIterationCount < 2000001),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 2000001) &&
+                                  (LocalLocalIterationCount < 3000001),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 3000001) &&
+                                  (LocalLocalIterationCount < 4000001),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 4000001) &&
+                                  (LocalLocalIterationCount < 5000001),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 5000001) &&
+                                  (LocalLocalIterationCount < 6000001),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 6000001) &&
+                                  (LocalLocalIterationCount < 7000001),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 7000001) &&
+                                  (LocalLocalIterationCount < 8000001),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 8000001) &&
+                                  (LocalLocalIterationCount < 9000001),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 9000001) &&
+                                  (LocalLocalIterationCount < 10000001),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+   public:
+    static constexpr FunctorOutputType func() {
+      return LinearExpansion6<Start, End, InitialTupleWithTypeEncodedNTTPs,
+                              InitialNonCEXDataFunctor>::func();
     }
   };
+};
 
-  template <IType LocalStart, IType LocalEnd,
-            typename LocalInitialTupleWithTypeEncodedNTTPs,
-            typename LocalInitialNonCEXDataFunctor>
-  struct LinearExpansion1 {
-    static constexpr IType kLocalIterationCount =
-        GetIterationCount<IType, LocalStart, LocalEnd, Inc,
-                          BoolExpressionFunctor>();
+template <typename BodyFunctor>
+struct NAryTreeCEXForLoop<BodyFunctor, 1> {
+  template <typename IType, IType Start, IType End, IType Inc,
+            typename BoolExpressionFunctor,
+            typename InitialTupleWithTypeEncodedNTTPs,
+            typename InitialNonCEXDataFunctor>
+  class With {
+   private:
+    using FunctorData = typename BodyFunctor::NonConstexprData;
+    using FunctorOutputType = typename BodyFunctor::OutputType;
 
-    // Forward-declare iteration structs for partial template specialization
-    // SFINAE
-    template <typename UnusedType = void, typename Picker = void>
-    struct I0;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I1;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I2;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I3;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I4;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I5;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I6;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I7;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I8;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I9;
+    static_assert(
+        IntegralPow(10, 7) >=
+            GetIterationCount<IType, Start, End, Inc, BoolExpressionFunctor>(),
+        "Requested iteration is greater than supported maximum iteration "
+        "count");
 
-    template <typename UnusedType>
-    struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion0<
-          GetExpansionStart<IType, LocalStart, Inc, 1, 0>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 0>(),
-          LocalInitialTupleWithTypeEncodedNTTPs,
-          LocalInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 11), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion0 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
 
-      struct NextInitialNonCEXDataFunctor {
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct INone;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      // Define pratial template specializations for base iteration structs that
+      // conditionaly instantiate the user BodyFunctor based on iteration count
+      template <typename UnusedType>
+      struct INone<UnusedType,
+                   std::enable_if_t<kLocalIterationCount == 0, void>> {
+        static constexpr FunctorOutputType kPriorOutput = {
+            LocalInitialNonCEXDataFunctor::value,
+            NthTypeOfTuple<0, LocalInitialTupleWithTypeEncodedNTTPs>::value};
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue = kPriorOutput;
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion0<
-          GetExpansionStart<IType, LocalStart, Inc, 1, 1>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 1>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 21), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<kLocalIterationCount >= 1, void>> {
+        static constexpr FunctorOutputType kPriorOutput = {
+            LocalInitialNonCEXDataFunctor::value,
+            NthTypeOfTuple<0, LocalInitialTupleWithTypeEncodedNTTPs>::value};
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 0),
+                                       std::get<1>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion0<
-          GetExpansionStart<IType, LocalStart, Inc, 1, 2>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 2>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 31), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<kLocalIterationCount >= 2, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 1),
+                                       std::get<1>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion0<
-          GetExpansionStart<IType, LocalStart, Inc, 1, 3>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 3>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 41), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<kLocalIterationCount >= 3, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 2),
+                                       std::get<1>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion0<
-          GetExpansionStart<IType, LocalStart, Inc, 1, 4>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 4>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 51), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<kLocalIterationCount >= 4, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 3),
+                                       std::get<1>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion0<
-          GetExpansionStart<IType, LocalStart, Inc, 1, 5>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 5>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 61), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<kLocalIterationCount >= 5, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 4),
+                                       std::get<1>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion0<
-          GetExpansionStart<IType, LocalStart, Inc, 1, 6>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 6>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 71), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<kLocalIterationCount >= 6, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 5),
+                                       std::get<1>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion0<
-          GetExpansionStart<IType, LocalStart, Inc, 1, 7>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 7>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 81), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<kLocalIterationCount >= 7, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 6),
+                                       std::get<1>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion0<
-          GetExpansionStart<IType, LocalStart, Inc, 1, 8>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 8>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 91), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<kLocalIterationCount >= 8, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 7),
+                                       std::get<1>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion0<
-          GetExpansionStart<IType, LocalStart, Inc, 1, 9>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 9>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<kLocalIterationCount >= 9, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+  
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 8),
+                                       std::get<1>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<kLocalIterationCount >= 10, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+  
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 9),
+                                       std::get<1>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 0, FunctorOutputType> {
+        return INone<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 1, FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 2, FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 3, FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 4, FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 5, FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 6, FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 7, FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 8, FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 9, FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 10, FunctorOutputType> {
+        return I9<>::kValue;
+      }
     };
-    // Create SFINAE function that returns the value from the last iteration
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
-                                (LocalLocalIterationCount < 11),
-                            FunctorOutputType> {
-      return I0<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 11) &&
-                                (LocalLocalIterationCount < 21),
-                            FunctorOutputType> {
-      return I1<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 21) &&
-                                (LocalLocalIterationCount < 31),
-                            FunctorOutputType> {
-      return I2<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 31) &&
-                                (LocalLocalIterationCount < 41),
-                            FunctorOutputType> {
-      return I3<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 41) &&
-                                (LocalLocalIterationCount < 51),
-                            FunctorOutputType> {
-      return I4<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 51) &&
-                                (LocalLocalIterationCount < 61),
-                            FunctorOutputType> {
-      return I5<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 61) &&
-                                (LocalLocalIterationCount < 71),
-                            FunctorOutputType> {
-      return I6<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 71) &&
-                                (LocalLocalIterationCount < 81),
-                            FunctorOutputType> {
-      return I7<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 81) &&
-                                (LocalLocalIterationCount < 91),
-                            FunctorOutputType> {
-      return I8<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 91) &&
-                                (LocalLocalIterationCount < 101),
-                            FunctorOutputType> {
-      return I9<>::kValue;
+
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion1 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 11), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 21), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 31), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 41), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 51), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 61), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 71), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 81), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 91), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 11),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 11) &&
+                                  (LocalLocalIterationCount < 21),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 21) &&
+                                  (LocalLocalIterationCount < 31),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 31) &&
+                                  (LocalLocalIterationCount < 41),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 41) &&
+                                  (LocalLocalIterationCount < 51),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 51) &&
+                                  (LocalLocalIterationCount < 61),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 61) &&
+                                  (LocalLocalIterationCount < 71),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 71) &&
+                                  (LocalLocalIterationCount < 81),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 81) &&
+                                  (LocalLocalIterationCount < 91),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 91) &&
+                                  (LocalLocalIterationCount < 101),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion2 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 101), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 201), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 301), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 401), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 501), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 601), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 701), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 801), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 901), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 101),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 101) &&
+                                  (LocalLocalIterationCount < 201),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 201) &&
+                                  (LocalLocalIterationCount < 301),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 301) &&
+                                  (LocalLocalIterationCount < 401),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 401) &&
+                                  (LocalLocalIterationCount < 501),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 501) &&
+                                  (LocalLocalIterationCount < 601),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 601) &&
+                                  (LocalLocalIterationCount < 701),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 701) &&
+                                  (LocalLocalIterationCount < 801),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 801) &&
+                                  (LocalLocalIterationCount < 901),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 901) &&
+                                  (LocalLocalIterationCount < 1001),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion3 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 1001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 2001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 3001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 4001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 5001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 6001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 7001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 8001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 9001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 1001),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 1001) &&
+                                  (LocalLocalIterationCount < 2001),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 2001) &&
+                                  (LocalLocalIterationCount < 3001),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 3001) &&
+                                  (LocalLocalIterationCount < 4001),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 4001) &&
+                                  (LocalLocalIterationCount < 5001),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 5001) &&
+                                  (LocalLocalIterationCount < 6001),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 6001) &&
+                                  (LocalLocalIterationCount < 7001),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 7001) &&
+                                  (LocalLocalIterationCount < 8001),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 8001) &&
+                                  (LocalLocalIterationCount < 9001),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 9001) &&
+                                  (LocalLocalIterationCount < 10001),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion4 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 10001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 20001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 30001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 40001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 50001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 60001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 70001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 80001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 90001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 10001),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 10001) &&
+                                  (LocalLocalIterationCount < 20001),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 20001) &&
+                                  (LocalLocalIterationCount < 30001),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 30001) &&
+                                  (LocalLocalIterationCount < 40001),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 40001) &&
+                                  (LocalLocalIterationCount < 50001),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 50001) &&
+                                  (LocalLocalIterationCount < 60001),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 60001) &&
+                                  (LocalLocalIterationCount < 70001),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 70001) &&
+                                  (LocalLocalIterationCount < 80001),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 80001) &&
+                                  (LocalLocalIterationCount < 90001),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 90001) &&
+                                  (LocalLocalIterationCount < 100001),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion5 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 100001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 200001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 300001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 400001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 500001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 600001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 700001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 800001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 900001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 100001),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 100001) &&
+                                  (LocalLocalIterationCount < 200001),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 200001) &&
+                                  (LocalLocalIterationCount < 300001),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 300001) &&
+                                  (LocalLocalIterationCount < 400001),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 400001) &&
+                                  (LocalLocalIterationCount < 500001),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 500001) &&
+                                  (LocalLocalIterationCount < 600001),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 600001) &&
+                                  (LocalLocalIterationCount < 700001),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 700001) &&
+                                  (LocalLocalIterationCount < 800001),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 800001) &&
+                                  (LocalLocalIterationCount < 900001),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 900001) &&
+                                  (LocalLocalIterationCount < 1000001),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion6 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 1000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 2000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 3000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 4000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 5000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 6000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 7000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 8000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 9000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 1000001),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 1000001) &&
+                                  (LocalLocalIterationCount < 2000001),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 2000001) &&
+                                  (LocalLocalIterationCount < 3000001),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 3000001) &&
+                                  (LocalLocalIterationCount < 4000001),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 4000001) &&
+                                  (LocalLocalIterationCount < 5000001),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 5000001) &&
+                                  (LocalLocalIterationCount < 6000001),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 6000001) &&
+                                  (LocalLocalIterationCount < 7000001),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 7000001) &&
+                                  (LocalLocalIterationCount < 8000001),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 8000001) &&
+                                  (LocalLocalIterationCount < 9000001),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 9000001) &&
+                                  (LocalLocalIterationCount < 10000001),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+   public:
+    static constexpr FunctorOutputType func() {
+      return LinearExpansion6<Start, End, InitialTupleWithTypeEncodedNTTPs,
+                              InitialNonCEXDataFunctor>::func();
     }
   };
+};
 
-  template <IType LocalStart, IType LocalEnd,
-            typename LocalInitialTupleWithTypeEncodedNTTPs,
-            typename LocalInitialNonCEXDataFunctor>
-  struct LinearExpansion2 {
-    static constexpr IType kLocalIterationCount =
-        GetIterationCount<IType, LocalStart, LocalEnd, Inc,
-                          BoolExpressionFunctor>();
+template <typename BodyFunctor>
+struct NAryTreeCEXForLoop<BodyFunctor, 2> {
+  template <typename IType, IType Start, IType End, IType Inc,
+            typename BoolExpressionFunctor,
+            typename InitialTupleWithTypeEncodedNTTPs,
+            typename InitialNonCEXDataFunctor>
+  class With {
+   private:
+    using FunctorData = typename BodyFunctor::NonConstexprData;
+    using FunctorOutputType = typename BodyFunctor::OutputType;
 
-    // Forward-declare iteration structs for partial template specialization
-    // SFINAE
-    template <typename UnusedType = void, typename Picker = void>
-    struct I0;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I1;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I2;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I3;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I4;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I5;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I6;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I7;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I8;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I9;
+    static_assert(
+        IntegralPow(10, 7) >=
+            GetIterationCount<IType, Start, End, Inc, BoolExpressionFunctor>(),
+        "Requested iteration is greater than supported maximum iteration "
+        "count");
 
-    template <typename UnusedType>
-    struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion1<
-          GetExpansionStart<IType, LocalStart, Inc, 2, 0>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 0>(),
-          LocalInitialTupleWithTypeEncodedNTTPs,
-          LocalInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 101), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion0 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
 
-      struct NextInitialNonCEXDataFunctor {
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct INone;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      // Define pratial template specializations for base iteration structs that
+      // conditionaly instantiate the user BodyFunctor based on iteration count
+      template <typename UnusedType>
+      struct INone<UnusedType,
+                   std::enable_if_t<kLocalIterationCount == 0, void>> {
+        static constexpr FunctorOutputType kPriorOutput = {
+            LocalInitialNonCEXDataFunctor::value,
+            NthTypeOfTuple<0, LocalInitialTupleWithTypeEncodedNTTPs>::value,
+            NthTypeOfTuple<1, LocalInitialTupleWithTypeEncodedNTTPs>::value};
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue = kPriorOutput;
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion1<
-          GetExpansionStart<IType, LocalStart, Inc, 2, 1>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 1>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 201), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<kLocalIterationCount >= 1, void>> {
+        static constexpr FunctorOutputType kPriorOutput = {
+            LocalInitialNonCEXDataFunctor::value,
+            NthTypeOfTuple<0, LocalInitialTupleWithTypeEncodedNTTPs>::value,
+            NthTypeOfTuple<1, LocalInitialTupleWithTypeEncodedNTTPs>::value};
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 0),
+                                       std::get<1>(kPriorOutput),
+                                       std::get<2>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion1<
-          GetExpansionStart<IType, LocalStart, Inc, 2, 2>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 2>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 301), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<kLocalIterationCount >= 2, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 1),
+                                       std::get<1>(kPriorOutput),
+                                       std::get<2>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion1<
-          GetExpansionStart<IType, LocalStart, Inc, 2, 3>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 3>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 401), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<kLocalIterationCount >= 3, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 2),
+                                       std::get<1>(kPriorOutput),
+                                       std::get<2>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion1<
-          GetExpansionStart<IType, LocalStart, Inc, 2, 4>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 4>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 501), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<kLocalIterationCount >= 4, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 3),
+                                       std::get<1>(kPriorOutput),
+                                       std::get<2>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion1<
-          GetExpansionStart<IType, LocalStart, Inc, 2, 5>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 5>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 601), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<kLocalIterationCount >= 5, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 4),
+                                       std::get<1>(kPriorOutput),
+                                       std::get<2>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion1<
-          GetExpansionStart<IType, LocalStart, Inc, 2, 6>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 6>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 701), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<kLocalIterationCount >= 6, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 5),
+                                       std::get<1>(kPriorOutput),
+                                       std::get<2>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion1<
-          GetExpansionStart<IType, LocalStart, Inc, 2, 7>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 7>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 801), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<kLocalIterationCount >= 7, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 6),
+                                       std::get<1>(kPriorOutput),
+                                       std::get<2>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion1<
-          GetExpansionStart<IType, LocalStart, Inc, 2, 8>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 8>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 901), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<kLocalIterationCount >= 8, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+  
         // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 7),
+                                       std::get<1>(kPriorOutput),
+                                       std::get<2>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
       };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion1<
-          GetExpansionStart<IType, LocalStart, Inc, 2, 9>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 9>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<kLocalIterationCount >= 9, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+  
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 8),
+                                       std::get<1>(kPriorOutput),
+                                       std::get<2>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<kLocalIterationCount >= 10, void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+  
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue =
+            BodyFunctor::template func<(LocalStart + 9),
+                                       std::get<1>(kPriorOutput),
+                                       std::get<2>(kPriorOutput)>(
+                std::get<0>(kPriorOutput));
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 0, FunctorOutputType> {
+        return INone<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 1, FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 2, FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 3, FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 4, FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 5, FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 6, FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 7, FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 8, FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 9, FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<LocalLocalIterationCount == 10, FunctorOutputType> {
+        return I9<>::kValue;
+      }
     };
-    // Create SFINAE function that returns the value from the last iteration
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
-                                (LocalLocalIterationCount < 101),
-                            FunctorOutputType> {
-      return I0<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 101) &&
-                                (LocalLocalIterationCount < 201),
-                            FunctorOutputType> {
-      return I1<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 201) &&
-                                (LocalLocalIterationCount < 301),
-                            FunctorOutputType> {
-      return I2<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 301) &&
-                                (LocalLocalIterationCount < 401),
-                            FunctorOutputType> {
-      return I3<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 401) &&
-                                (LocalLocalIterationCount < 501),
-                            FunctorOutputType> {
-      return I4<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 501) &&
-                                (LocalLocalIterationCount < 601),
-                            FunctorOutputType> {
-      return I5<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 601) &&
-                                (LocalLocalIterationCount < 701),
-                            FunctorOutputType> {
-      return I6<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 701) &&
-                                (LocalLocalIterationCount < 801),
-                            FunctorOutputType> {
-      return I7<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 801) &&
-                                (LocalLocalIterationCount < 901),
-                            FunctorOutputType> {
-      return I8<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 901) &&
-                                (LocalLocalIterationCount < 1001),
-                            FunctorOutputType> {
-      return I9<>::kValue;
+
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion1 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 11), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 21), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 31), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 41), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 51), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 61), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 71), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 81), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 91), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion0<
+            GetExpansionStart<IType, LocalStart, Inc, 1, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 1, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 11),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 11) &&
+                                  (LocalLocalIterationCount < 21),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 21) &&
+                                  (LocalLocalIterationCount < 31),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 31) &&
+                                  (LocalLocalIterationCount < 41),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 41) &&
+                                  (LocalLocalIterationCount < 51),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 51) &&
+                                  (LocalLocalIterationCount < 61),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 61) &&
+                                  (LocalLocalIterationCount < 71),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 71) &&
+                                  (LocalLocalIterationCount < 81),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 81) &&
+                                  (LocalLocalIterationCount < 91),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 91) &&
+                                  (LocalLocalIterationCount < 101),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion2 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 101), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 201), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 301), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 401), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 501), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 601), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 701), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 801), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 901), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion1<
+            GetExpansionStart<IType, LocalStart, Inc, 2, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 2, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 101),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 101) &&
+                                  (LocalLocalIterationCount < 201),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 201) &&
+                                  (LocalLocalIterationCount < 301),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 301) &&
+                                  (LocalLocalIterationCount < 401),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 401) &&
+                                  (LocalLocalIterationCount < 501),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 501) &&
+                                  (LocalLocalIterationCount < 601),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 601) &&
+                                  (LocalLocalIterationCount < 701),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 701) &&
+                                  (LocalLocalIterationCount < 801),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 801) &&
+                                  (LocalLocalIterationCount < 901),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 901) &&
+                                  (LocalLocalIterationCount < 1001),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion3 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 1001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 2001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 3001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 4001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 5001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 6001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 7001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 8001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 9001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion2<
+            GetExpansionStart<IType, LocalStart, Inc, 3, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 1001),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 1001) &&
+                                  (LocalLocalIterationCount < 2001),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 2001) &&
+                                  (LocalLocalIterationCount < 3001),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 3001) &&
+                                  (LocalLocalIterationCount < 4001),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 4001) &&
+                                  (LocalLocalIterationCount < 5001),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 5001) &&
+                                  (LocalLocalIterationCount < 6001),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 6001) &&
+                                  (LocalLocalIterationCount < 7001),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 7001) &&
+                                  (LocalLocalIterationCount < 8001),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 8001) &&
+                                  (LocalLocalIterationCount < 9001),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 9001) &&
+                                  (LocalLocalIterationCount < 10001),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion4 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 10001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 20001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 30001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 40001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 50001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 60001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 70001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 80001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 90001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion3<
+            GetExpansionStart<IType, LocalStart, Inc, 4, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 10001),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 10001) &&
+                                  (LocalLocalIterationCount < 20001),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 20001) &&
+                                  (LocalLocalIterationCount < 30001),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 30001) &&
+                                  (LocalLocalIterationCount < 40001),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 40001) &&
+                                  (LocalLocalIterationCount < 50001),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 50001) &&
+                                  (LocalLocalIterationCount < 60001),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 60001) &&
+                                  (LocalLocalIterationCount < 70001),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 70001) &&
+                                  (LocalLocalIterationCount < 80001),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 80001) &&
+                                  (LocalLocalIterationCount < 90001),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 90001) &&
+                                  (LocalLocalIterationCount < 100001),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion5 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 100001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 200001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 300001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 400001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 500001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 600001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 700001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 800001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 900001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion4<
+            GetExpansionStart<IType, LocalStart, Inc, 5, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 100001),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 100001) &&
+                                  (LocalLocalIterationCount < 200001),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 200001) &&
+                                  (LocalLocalIterationCount < 300001),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 300001) &&
+                                  (LocalLocalIterationCount < 400001),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 400001) &&
+                                  (LocalLocalIterationCount < 500001),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 500001) &&
+                                  (LocalLocalIterationCount < 600001),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 600001) &&
+                                  (LocalLocalIterationCount < 700001),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 700001) &&
+                                  (LocalLocalIterationCount < 800001),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 800001) &&
+                                  (LocalLocalIterationCount < 900001),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 900001) &&
+                                  (LocalLocalIterationCount < 1000001),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+    template <IType LocalStart, IType LocalEnd,
+              typename LocalInitialTupleWithTypeEncodedNTTPs,
+              typename LocalInitialNonCEXDataFunctor>
+    struct LinearExpansion6 {
+      static constexpr IType kLocalIterationCount =
+          GetIterationCount<IType, LocalStart, LocalEnd, Inc,
+                            BoolExpressionFunctor>();
+
+      // Forward-declare iteration structs for partial template specialization
+      // SFINAE
+      template <typename UnusedType = void, typename Picker = void>
+      struct I0;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I1;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I2;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I3;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I4;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I5;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I6;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I7;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I8;
+      template <typename UnusedType = void, typename Picker = void>
+      struct I9;
+  
+      template <typename UnusedType>
+      struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 0>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 0>(),
+            LocalInitialTupleWithTypeEncodedNTTPs,
+            LocalInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 1000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 1>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 1>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 2000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 2>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 2>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 3000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 3>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 3>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 4000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 4>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 4>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 5000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 5>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 5>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 6000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 6>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 6>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 7000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 7>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 7>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 8000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 8>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 8>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      template <typename UnusedType>
+      struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 9000001), void>> {
+        static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
+
+        struct NextInitialNonCEXDataFunctor {
+          // NOLINTNEXTLINE(readability-identifier-naming)
+          static constexpr FunctorData value = std::get<0>(kPriorOutput);
+        };
+
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        static constexpr auto kValue = LinearExpansion5<
+            GetExpansionStart<IType, LocalStart, Inc, 6, 9>(),
+            GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 9>(),
+            typename TypeEncodedNTTPs<BodyFunctor>::template type<
+                std::get<1>(kPriorOutput),
+                std::get<2>(kPriorOutput)>,
+            NextInitialNonCEXDataFunctor>::func();
+      };
+      // Create SFINAE function that returns the value from the last iteration
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
+                                  (LocalLocalIterationCount < 1000001),
+                              FunctorOutputType> {
+        return I0<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 1000001) &&
+                                  (LocalLocalIterationCount < 2000001),
+                              FunctorOutputType> {
+        return I1<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 2000001) &&
+                                  (LocalLocalIterationCount < 3000001),
+                              FunctorOutputType> {
+        return I2<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 3000001) &&
+                                  (LocalLocalIterationCount < 4000001),
+                              FunctorOutputType> {
+        return I3<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 4000001) &&
+                                  (LocalLocalIterationCount < 5000001),
+                              FunctorOutputType> {
+        return I4<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 5000001) &&
+                                  (LocalLocalIterationCount < 6000001),
+                              FunctorOutputType> {
+        return I5<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 6000001) &&
+                                  (LocalLocalIterationCount < 7000001),
+                              FunctorOutputType> {
+        return I6<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 7000001) &&
+                                  (LocalLocalIterationCount < 8000001),
+                              FunctorOutputType> {
+        return I7<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 8000001) &&
+                                  (LocalLocalIterationCount < 9000001),
+                              FunctorOutputType> {
+        return I8<>::kValue;
+      }
+      template <IType LocalLocalIterationCount = kLocalIterationCount>
+      static constexpr auto func()
+          -> std::enable_if_t<(LocalLocalIterationCount >= 9000001) &&
+                                  (LocalLocalIterationCount < 10000001),
+                              FunctorOutputType> {
+        return I9<>::kValue;
+      }
+    };
+   public:
+    static constexpr FunctorOutputType func() {
+      return LinearExpansion6<Start, End, InitialTupleWithTypeEncodedNTTPs,
+                              InitialNonCEXDataFunctor>::func();
     }
   };
-
-  template <IType LocalStart, IType LocalEnd,
-            typename LocalInitialTupleWithTypeEncodedNTTPs,
-            typename LocalInitialNonCEXDataFunctor>
-  struct LinearExpansion3 {
-    static constexpr IType kLocalIterationCount =
-        GetIterationCount<IType, LocalStart, LocalEnd, Inc,
-                          BoolExpressionFunctor>();
-
-    // Forward-declare iteration structs for partial template specialization
-    // SFINAE
-    template <typename UnusedType = void, typename Picker = void>
-    struct I0;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I1;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I2;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I3;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I4;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I5;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I6;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I7;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I8;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I9;
-
-    template <typename UnusedType>
-    struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion2<
-          GetExpansionStart<IType, LocalStart, Inc, 3, 0>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 0>(),
-          LocalInitialTupleWithTypeEncodedNTTPs,
-          LocalInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 1001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion2<
-          GetExpansionStart<IType, LocalStart, Inc, 3, 1>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 1>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 2001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion2<
-          GetExpansionStart<IType, LocalStart, Inc, 3, 2>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 2>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 3001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion2<
-          GetExpansionStart<IType, LocalStart, Inc, 3, 3>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 3>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 4001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion2<
-          GetExpansionStart<IType, LocalStart, Inc, 3, 4>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 4>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 5001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion2<
-          GetExpansionStart<IType, LocalStart, Inc, 3, 5>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 5>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 6001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion2<
-          GetExpansionStart<IType, LocalStart, Inc, 3, 6>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 6>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 7001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion2<
-          GetExpansionStart<IType, LocalStart, Inc, 3, 7>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 7>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 8001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion2<
-          GetExpansionStart<IType, LocalStart, Inc, 3, 8>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 8>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 9001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion2<
-          GetExpansionStart<IType, LocalStart, Inc, 3, 9>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 3, 9>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    // Create SFINAE function that returns the value from the last iteration
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
-                                (LocalLocalIterationCount < 1001),
-                            FunctorOutputType> {
-      return I0<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 1001) &&
-                                (LocalLocalIterationCount < 2001),
-                            FunctorOutputType> {
-      return I1<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 2001) &&
-                                (LocalLocalIterationCount < 3001),
-                            FunctorOutputType> {
-      return I2<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 3001) &&
-                                (LocalLocalIterationCount < 4001),
-                            FunctorOutputType> {
-      return I3<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 4001) &&
-                                (LocalLocalIterationCount < 5001),
-                            FunctorOutputType> {
-      return I4<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 5001) &&
-                                (LocalLocalIterationCount < 6001),
-                            FunctorOutputType> {
-      return I5<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 6001) &&
-                                (LocalLocalIterationCount < 7001),
-                            FunctorOutputType> {
-      return I6<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 7001) &&
-                                (LocalLocalIterationCount < 8001),
-                            FunctorOutputType> {
-      return I7<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 8001) &&
-                                (LocalLocalIterationCount < 9001),
-                            FunctorOutputType> {
-      return I8<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 9001) &&
-                                (LocalLocalIterationCount < 10001),
-                            FunctorOutputType> {
-      return I9<>::kValue;
-    }
-  };
-
-  template <IType LocalStart, IType LocalEnd,
-            typename LocalInitialTupleWithTypeEncodedNTTPs,
-            typename LocalInitialNonCEXDataFunctor>
-  struct LinearExpansion4 {
-    static constexpr IType kLocalIterationCount =
-        GetIterationCount<IType, LocalStart, LocalEnd, Inc,
-                          BoolExpressionFunctor>();
-
-    // Forward-declare iteration structs for partial template specialization
-    // SFINAE
-    template <typename UnusedType = void, typename Picker = void>
-    struct I0;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I1;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I2;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I3;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I4;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I5;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I6;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I7;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I8;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I9;
-
-    template <typename UnusedType>
-    struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion3<
-          GetExpansionStart<IType, LocalStart, Inc, 4, 0>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 0>(),
-          LocalInitialTupleWithTypeEncodedNTTPs,
-          LocalInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 10001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion3<
-          GetExpansionStart<IType, LocalStart, Inc, 4, 1>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 1>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 20001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion3<
-          GetExpansionStart<IType, LocalStart, Inc, 4, 2>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 2>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 30001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion3<
-          GetExpansionStart<IType, LocalStart, Inc, 4, 3>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 3>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 40001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion3<
-          GetExpansionStart<IType, LocalStart, Inc, 4, 4>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 4>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 50001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion3<
-          GetExpansionStart<IType, LocalStart, Inc, 4, 5>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 5>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 60001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion3<
-          GetExpansionStart<IType, LocalStart, Inc, 4, 6>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 6>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 70001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion3<
-          GetExpansionStart<IType, LocalStart, Inc, 4, 7>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 7>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 80001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion3<
-          GetExpansionStart<IType, LocalStart, Inc, 4, 8>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 8>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 90001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion3<
-          GetExpansionStart<IType, LocalStart, Inc, 4, 9>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 4, 9>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    // Create SFINAE function that returns the value from the last iteration
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
-                                (LocalLocalIterationCount < 10001),
-                            FunctorOutputType> {
-      return I0<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 10001) &&
-                                (LocalLocalIterationCount < 20001),
-                            FunctorOutputType> {
-      return I1<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 20001) &&
-                                (LocalLocalIterationCount < 30001),
-                            FunctorOutputType> {
-      return I2<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 30001) &&
-                                (LocalLocalIterationCount < 40001),
-                            FunctorOutputType> {
-      return I3<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 40001) &&
-                                (LocalLocalIterationCount < 50001),
-                            FunctorOutputType> {
-      return I4<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 50001) &&
-                                (LocalLocalIterationCount < 60001),
-                            FunctorOutputType> {
-      return I5<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 60001) &&
-                                (LocalLocalIterationCount < 70001),
-                            FunctorOutputType> {
-      return I6<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 70001) &&
-                                (LocalLocalIterationCount < 80001),
-                            FunctorOutputType> {
-      return I7<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 80001) &&
-                                (LocalLocalIterationCount < 90001),
-                            FunctorOutputType> {
-      return I8<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 90001) &&
-                                (LocalLocalIterationCount < 100001),
-                            FunctorOutputType> {
-      return I9<>::kValue;
-    }
-  };
-
-  template <IType LocalStart, IType LocalEnd,
-            typename LocalInitialTupleWithTypeEncodedNTTPs,
-            typename LocalInitialNonCEXDataFunctor>
-  struct LinearExpansion5 {
-    static constexpr IType kLocalIterationCount =
-        GetIterationCount<IType, LocalStart, LocalEnd, Inc,
-                          BoolExpressionFunctor>();
-
-    // Forward-declare iteration structs for partial template specialization
-    // SFINAE
-    template <typename UnusedType = void, typename Picker = void>
-    struct I0;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I1;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I2;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I3;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I4;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I5;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I6;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I7;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I8;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I9;
-
-    template <typename UnusedType>
-    struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion4<
-          GetExpansionStart<IType, LocalStart, Inc, 5, 0>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 0>(),
-          LocalInitialTupleWithTypeEncodedNTTPs,
-          LocalInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 100001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion4<
-          GetExpansionStart<IType, LocalStart, Inc, 5, 1>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 1>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 200001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion4<
-          GetExpansionStart<IType, LocalStart, Inc, 5, 2>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 2>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 300001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion4<
-          GetExpansionStart<IType, LocalStart, Inc, 5, 3>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 3>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 400001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion4<
-          GetExpansionStart<IType, LocalStart, Inc, 5, 4>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 4>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 500001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion4<
-          GetExpansionStart<IType, LocalStart, Inc, 5, 5>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 5>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 600001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion4<
-          GetExpansionStart<IType, LocalStart, Inc, 5, 6>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 6>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 700001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion4<
-          GetExpansionStart<IType, LocalStart, Inc, 5, 7>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 7>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 800001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion4<
-          GetExpansionStart<IType, LocalStart, Inc, 5, 8>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 8>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 900001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion4<
-          GetExpansionStart<IType, LocalStart, Inc, 5, 9>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 5, 9>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    // Create SFINAE function that returns the value from the last iteration
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
-                                (LocalLocalIterationCount < 100001),
-                            FunctorOutputType> {
-      return I0<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 100001) &&
-                                (LocalLocalIterationCount < 200001),
-                            FunctorOutputType> {
-      return I1<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 200001) &&
-                                (LocalLocalIterationCount < 300001),
-                            FunctorOutputType> {
-      return I2<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 300001) &&
-                                (LocalLocalIterationCount < 400001),
-                            FunctorOutputType> {
-      return I3<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 400001) &&
-                                (LocalLocalIterationCount < 500001),
-                            FunctorOutputType> {
-      return I4<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 500001) &&
-                                (LocalLocalIterationCount < 600001),
-                            FunctorOutputType> {
-      return I5<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 600001) &&
-                                (LocalLocalIterationCount < 700001),
-                            FunctorOutputType> {
-      return I6<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 700001) &&
-                                (LocalLocalIterationCount < 800001),
-                            FunctorOutputType> {
-      return I7<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 800001) &&
-                                (LocalLocalIterationCount < 900001),
-                            FunctorOutputType> {
-      return I8<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 900001) &&
-                                (LocalLocalIterationCount < 1000001),
-                            FunctorOutputType> {
-      return I9<>::kValue;
-    }
-  };
-
-  template <IType LocalStart, IType LocalEnd,
-            typename LocalInitialTupleWithTypeEncodedNTTPs,
-            typename LocalInitialNonCEXDataFunctor>
-  struct LinearExpansion6 {
-    static constexpr IType kLocalIterationCount =
-        GetIterationCount<IType, LocalStart, LocalEnd, Inc,
-                          BoolExpressionFunctor>();
-
-    // Forward-declare iteration structs for partial template specialization
-    // SFINAE
-    template <typename UnusedType = void, typename Picker = void>
-    struct I0;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I1;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I2;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I3;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I4;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I5;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I6;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I7;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I8;
-    template <typename UnusedType = void, typename Picker = void>
-    struct I9;
-
-    template <typename UnusedType>
-    struct I0<UnusedType, std::enable_if_t<(kLocalIterationCount >= 0), void>> {
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion5<
-          GetExpansionStart<IType, LocalStart, Inc, 6, 0>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 0>(),
-          LocalInitialTupleWithTypeEncodedNTTPs,
-          LocalInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I1<UnusedType, std::enable_if_t<(kLocalIterationCount >= 1000001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I0<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion5<
-          GetExpansionStart<IType, LocalStart, Inc, 6, 1>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 1>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I2<UnusedType, std::enable_if_t<(kLocalIterationCount >= 2000001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I1<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion5<
-          GetExpansionStart<IType, LocalStart, Inc, 6, 2>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 2>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I3<UnusedType, std::enable_if_t<(kLocalIterationCount >= 3000001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I2<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion5<
-          GetExpansionStart<IType, LocalStart, Inc, 6, 3>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 3>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I4<UnusedType, std::enable_if_t<(kLocalIterationCount >= 4000001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I3<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion5<
-          GetExpansionStart<IType, LocalStart, Inc, 6, 4>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 4>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I5<UnusedType, std::enable_if_t<(kLocalIterationCount >= 5000001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I4<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion5<
-          GetExpansionStart<IType, LocalStart, Inc, 6, 5>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 5>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I6<UnusedType, std::enable_if_t<(kLocalIterationCount >= 6000001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I5<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion5<
-          GetExpansionStart<IType, LocalStart, Inc, 6, 6>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 6>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I7<UnusedType, std::enable_if_t<(kLocalIterationCount >= 7000001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I6<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion5<
-          GetExpansionStart<IType, LocalStart, Inc, 6, 7>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 7>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I8<UnusedType, std::enable_if_t<(kLocalIterationCount >= 8000001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I7<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion5<
-          GetExpansionStart<IType, LocalStart, Inc, 6, 8>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 8>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    template <typename UnusedType>
-    struct I9<UnusedType, std::enable_if_t<(kLocalIterationCount >= 9000001), void>> {
-      static constexpr FunctorOutputType kPriorOutput = I8<>::kValue;
-
-      struct NextInitialNonCEXDataFunctor {
-        // NOLINTNEXTLINE(readability-identifier-naming)
-        static constexpr FunctorData value = std::get<0>(kPriorOutput);
-      };
-
-      // NOLINTNEXTLINE(readability-identifier-naming)
-      static constexpr auto kValue = LinearExpansion5<
-          GetExpansionStart<IType, LocalStart, Inc, 6, 9>(),
-          GetExpansionEnd<IType, LocalStart, LocalEnd, Inc, 6, 9>(),
-          NextInitialTupleWithTypeEncodedNTTPs<std::get<1>(kPriorOutput)>,
-          NextInitialNonCEXDataFunctor>::func();
-    };
-    // Create SFINAE function that returns the value from the last iteration
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 0) &&
-                                (LocalLocalIterationCount < 1000001),
-                            FunctorOutputType> {
-      return I0<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 1000001) &&
-                                (LocalLocalIterationCount < 2000001),
-                            FunctorOutputType> {
-      return I1<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 2000001) &&
-                                (LocalLocalIterationCount < 3000001),
-                            FunctorOutputType> {
-      return I2<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 3000001) &&
-                                (LocalLocalIterationCount < 4000001),
-                            FunctorOutputType> {
-      return I3<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 4000001) &&
-                                (LocalLocalIterationCount < 5000001),
-                            FunctorOutputType> {
-      return I4<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 5000001) &&
-                                (LocalLocalIterationCount < 6000001),
-                            FunctorOutputType> {
-      return I5<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 6000001) &&
-                                (LocalLocalIterationCount < 7000001),
-                            FunctorOutputType> {
-      return I6<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 7000001) &&
-                                (LocalLocalIterationCount < 8000001),
-                            FunctorOutputType> {
-      return I7<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 8000001) &&
-                                (LocalLocalIterationCount < 9000001),
-                            FunctorOutputType> {
-      return I8<>::kValue;
-    }
-    template <IType LocalLocalIterationCount = kLocalIterationCount>
-    static constexpr auto func()
-        -> std::enable_if_t<(LocalLocalIterationCount >= 9000001) &&
-                                (LocalLocalIterationCount < 10000001),
-                            FunctorOutputType> {
-      return I9<>::kValue;
-    }
-  };
-
- public:
-  static constexpr FunctorOutputType func() {
-    return LinearExpansion6<Start, End, InitialTupleWithTypeEncodedNTTPs,
-                            InitialNonCEXDataFunctor>::func();
-  }
 };
 
 }  // namespace impl
