@@ -118,7 +118,8 @@ TEST(ConstexprFor, PassesOneNTTPInitializesFirstData) {
       PassesOneNTTPInitializesFirstDataFunctor::IType, 0, kMaxTemplateDepth, 1,
       cex_for_loop::BoolExpressionFunctor_LT,
       PassesOneNTTPInitializesFirstDataFunctor,
-      std::tuple<std::integral_constant<std::size_t, 0>>,
+      cex_for_loop::TypeEncodedNTTPs<PassesOneNTTPInitializesFirstDataFunctor>::type<0>,
+                                     
       PassesOneNTTPInitializesFirstDataFunctor::TestInitialDataTypeEncoded>();
 
   // Uncomment to print i values in order

@@ -6,6 +6,7 @@ cc_library(
     hdrs = [
         "include/CEXForLoop/bool_expression_functors.h",
         "include/CEXForLoop/cex_for_loop.h",
+        "include/CEXForLoop/type_encoded_nttps_helper.h",
     ],
     includes = ["include"],
     visibility = ["//visibility:public"],

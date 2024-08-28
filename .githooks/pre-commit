@@ -1,3 +1,4 @@
 #!/bin/sh
 
 python include/CEXForLoop/impl/generator_cex_for_loop_impl.py
+python include/CEXForLoop/generator_type_encoded_nttps_helper.py
