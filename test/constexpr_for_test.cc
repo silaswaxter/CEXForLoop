@@ -82,7 +82,7 @@ struct PassesOneNTTPInitializesFirstDataFunctor {
   struct NonConstexprData {
     int foo;
     char bar;
-    std::array<std::size_t, 50000> arr;
+    std::array<std::size_t, 100> arr;
   };
 
   // The type for I
@@ -91,16 +91,16 @@ struct PassesOneNTTPInitializesFirstDataFunctor {
   // result of whatever work was done on the input data. The remaining elements
   // are the template nontype parameters that will be passed to func on each
   // call. These parameters are constexpr by definition.
-  using OutputType = std::tuple<NonConstexprData, std::size_t, std::size_t>;
+  using OutputType = std::tuple<NonConstexprData, std::size_t>;
 
-  template <IType I, std::size_t AppendIndex, std::size_t a>
+  template <IType I, std::size_t AppendIndex>
   static constexpr OutputType func(NonConstexprData input_data) {
     NonConstexprData output_data = input_data;
     std::get<AppendIndex>(output_data.arr) = I;
     constexpr std::size_t kNextAppendIndex =
         (AppendIndex + 1 == output_data.arr.size()) ? 0 : AppendIndex + 1;
 
-    OutputType return_value = {output_data, kNextAppendIndex, a};
+    OutputType return_value = {output_data, kNextAppendIndex};
     return return_value;
   };
 
@@ -118,7 +118,7 @@ TEST(ConstexprFor, PassesOneNTTPInitializesFirstData) {
       PassesOneNTTPInitializesFirstDataFunctor::IType, 0, kMaxTemplateDepth, 1,
       cex_for_loop::BoolExpressionFunctor_LT,
       PassesOneNTTPInitializesFirstDataFunctor,
-      cex_for_loop::TypeEncodedNTTPs<PassesOneNTTPInitializesFirstDataFunctor>::type<0, 1>,
+      cex_for_loop::TypeEncodedNTTPs<PassesOneNTTPInitializesFirstDataFunctor>::type<0>,
       PassesOneNTTPInitializesFirstDataFunctor::TestInitialDataTypeEncoded>();
 
   // Uncomment to print i values in order

@@ -39,7 +39,9 @@ def generate_header_file(file_path, max_nttp_count, linear_expansion_length, lin
         # Write the includes
         f.write("#include <cstddef>\n")
         f.write("#include <tuple>\n")
-        f.write("#include <type_traits>\n\n")
+        f.write("#include <type_traits>\n")
+        f.write("#include <array>\n")
+        f.write("\n")
         f.write("#include \"../bool_expression_functors.h\"\n")
         f.write("#include \"../type_encoded_nttps_helper.h\"\n")
         f.write("\n")
@@ -153,6 +155,19 @@ def generate_header_file(file_path, max_nttp_count, linear_expansion_length, lin
                 f.write("      static constexpr IType kLocalIterationCount =\n")
                 f.write("          GetIterationCount<IType, LocalStart, LocalEnd, Inc,\n")
                 f.write("                            BoolExpressionFunctor>();\n\n")
+                    
+                f.write("      static constexpr int GetEnabledIteration() {\n")
+                f.write("        int return_value = -1;\n")
+                for i in range(linear_expansion_length):
+                    f.write("        if (BoolExpressionFunctor::template WithType<IType>::func(\n")
+                    f.write(f"                LocalStart + ({i} * Inc), End)) {{\n")
+                    f.write(f"          return_value = {i};\n")
+                    f.write("        } else {\n")
+                    f.write("          return return_value;\n")
+                    f.write("        }\n")
+                f.write("      }\n\n")
+
+                f.write("      static constexpr auto kEnabledIterationCache = GetEnabledIteration();\n")
 
                 f.write(f"      // Forward-declare iteration structs for partial template specialization\n")
                 f.write("      // SFINAE\n")
@@ -165,11 +180,11 @@ def generate_header_file(file_path, max_nttp_count, linear_expansion_length, lin
                 f.write("  \n")
 
                 if n == 0:
-                    f.write("      // Define pratial template specializations for base iteration structs that\n")
+                    f.write("      // Define partial template specializations for base iteration structs that\n")
                     f.write("      // conditionaly instantiate the user BodyFunctor based on iteration count\n")
                     f.write("      template <typename UnusedType>\n")
                     f.write("      struct INone<UnusedType,\n")
-                    f.write("                   std::enable_if_t<kLocalIterationCount == 0, void>> {\n")
+                    f.write("                   std::enable_if_t<kEnabledIterationCache == -1, void>> {\n")
                     f.write("        static constexpr FunctorOutputType kPriorOutput = {\n")
                     f.write("            LocalInitialNonCEXDataFunctor::value")
                     if t != 0:
@@ -183,9 +198,10 @@ def generate_header_file(file_path, max_nttp_count, linear_expansion_length, lin
                     f.write("        // NOLINTNEXTLINE(readability-identifier-naming)\n")
                     f.write("        static constexpr auto kValue = kPriorOutput;\n")
                     f.write("      };\n")
+
                     for i in range(linear_expansion_length):
                         f.write("      template <typename UnusedType>\n")
-                        f.write(f"      struct I{i}<UnusedType, std::enable_if_t<kLocalIterationCount >= {i+1}, void>> {{\n")
+                        f.write(f"      struct I{i}<UnusedType, std::enable_if_t<kEnabledIterationCache >= {i}, void>> {{\n")
                         if i == 0:
                             f.write("        static constexpr FunctorOutputType kPriorOutput = {\n")
                             f.write("            LocalInitialNonCEXDataFunctor::value")
@@ -220,9 +236,9 @@ def generate_header_file(file_path, max_nttp_count, linear_expansion_length, lin
                     f.write("        return INone<>::kValue;\n")
                     f.write("      }\n")
                     for i in range(linear_expansion_length):
-                        f.write("      template <IType LocalLocalIterationCount = kLocalIterationCount>\n")
+                        f.write("      template <int LastEnabledI = kEnabledIterationCache>\n")
                         f.write("      static constexpr auto func()\n")
-                        f.write(f"          -> std::enable_if_t<LocalLocalIterationCount == {i+1}, FunctorOutputType> {{\n")
+                        f.write(f"          -> std::enable_if_t<LastEnabledI == {i}, FunctorOutputType> {{\n")
                         f.write(f"        return I{i}<>::kValue;\n")
                         f.write("      }\n")
                     f.write("    };\n\n")
@@ -274,7 +290,7 @@ def generate_header_file(file_path, max_nttp_count, linear_expansion_length, lin
             # Provide the interface
             f.write("   public:\n")
             f.write("    static constexpr FunctorOutputType func() {\n")
-            f.write("      return LinearExpansion6<Start, End, InitialTupleWithTypeEncodedNTTPs,\n")
+            f.write(f"      return LinearExpansion{linear_expansion_count - 1}<Start, End, InitialTupleWithTypeEncodedNTTPs,\n")
             f.write("                              InitialNonCEXDataFunctor>::func();\n")
             f.write("    }\n")
             f.write("  };\n")
@@ -289,4 +305,4 @@ def generate_header_file(file_path, max_nttp_count, linear_expansion_length, lin
 
 gen_file_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "nary_tree_cex_for_loop.h")
 
-generate_header_file(gen_file_path, 3, 10, 7)  # max iteration count = second_last_param**(last_param)
+generate_header_file(gen_file_path, 2, 10, 1)  # max iteration count = second_last_param**(last_param)
