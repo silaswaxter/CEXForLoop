@@ -5,84 +5,13 @@
 #include <array>
 #include <cstdint>
 
-// struct TestFunctorSetSmallIteration {
-//   struct Data {
-//     std::array<int32_t, 250> i_tracker;
-//     int last_i_value;
-//   };
-//
-//   using IType = int32_t;
-//   using OutputType = std::tuple<Data, uint8_t>;
-//
-//   template <IType I, uint8_t TestNTTP>
-//   static constexpr OutputType func(Data input_data) {
-//     Data output_data = input_data;
-//     std::get<I>(output_data.i_tracker) = I;
-//     output_data.last_i_value = I;
-//     return {output_data, TestNTTP};
-//   };
-// };
-//
-// struct TestFunctorAdd {
-//   struct Data {
-//     int64_t kResult;
-//   };
-//
-//   template <int64_t I>
-//   static constexpr Data func(Data input_data) {
-//     input_data.kResult += I;
-//     return input_data;
-//   };
-// };
-//
-// struct TestFunctorSetForNegative2IncNegative2Start {
-//   using NumericType = int16_t;
-//   struct Data {
-//     std::array<int16_t, 200> i_tracker;
-//   };
-//
-//   template <int16_t I>
-//   static constexpr Data func(Data input_data) {
-//     std::get<(-1 * I / 2) - 1>(input_data.i_tracker) = I;
-//     return input_data;
-//   };
-// };
-//
-// struct TestFunctorSetLargeIterationIncBy3WithNegative1700Start {
-//   struct Data {
-//     std::array<int64_t, 10'100> i_tracker;
-//     int last_i_value;
-//   };
-//
-//   template <int64_t I>
-//   static constexpr Data func(Data input_data) {
-//     std::get<(I - 300) / -3>(input_data.i_tracker) = I;
-//     input_data.last_i_value = I;
-//     return input_data;
-//   };
-// };
-//
-// struct TestFunctorSetLargeIteration {
-//   struct Data {
-//     std::array<uint64_t, 10'100> i_tracker;
-//     uint64_t last_i_value;
-//   };
-//
-//   template <uint64_t I>
-//   static constexpr Data func(Data input_data) {
-//     std::get<I>(input_data.i_tracker) = I;
-//     input_data.last_i_value = I;
-//     return input_data;
-//   };
-// };
-
-struct PassesOneNTTPInitializesFirstDataFunctor {
+struct Passes0NTTPsFunctor {
   // This is the data that will be returned by this functor. Its modifiable in
   // the context of this functor.
   struct NonConstexprData {
     int foo;
     char bar;
-    std::array<std::size_t, 100> arr;
+    std::array<std::size_t, 1000> arr;
   };
 
   // The type for I
@@ -91,35 +20,35 @@ struct PassesOneNTTPInitializesFirstDataFunctor {
   // result of whatever work was done on the input data. The remaining elements
   // are the template nontype parameters that will be passed to func on each
   // call. These parameters are constexpr by definition.
-  using OutputType = std::tuple<NonConstexprData, std::size_t>;
+  using OutputType = std::tuple<NonConstexprData>;
 
-  template <IType I, std::size_t AppendIndex>
+  template <IType I>
   static constexpr OutputType func(NonConstexprData input_data) {
     NonConstexprData output_data = input_data;
-    std::get<AppendIndex>(output_data.arr) = I;
-    constexpr std::size_t kNextAppendIndex =
-        (AppendIndex + 1 == output_data.arr.size()) ? 0 : AppendIndex + 1;
+    std::get<I>(output_data.arr) = I;
 
-    OutputType return_value = {output_data, kNextAppendIndex};
+    OutputType return_value = {output_data};
     return return_value;
   };
 
   struct TestInitialDataTypeEncoded {
-    static constexpr PassesOneNTTPInitializesFirstDataFunctor::NonConstexprData
+    static constexpr NonConstexprData
         // NOLINTNEXTLINE(readability-identifier-naming)
         value = {4, 3, {}};
   };
 };
 
-TEST(ConstexprFor, PassesOneNTTPInitializesFirstData) {
-  constexpr std::size_t kMaxTemplateDepth = 5;
+TEST(ConstexprFor, NTTPCount0InitilizesAndReturnsData) {
+  // this number is high because standard implementation for NTTP count = 0,
+  // will be O(n) instead of O(log(n)) for required template depth versus
+  // iteration count
+  constexpr std::size_t kBoundaryValue = 1000;
 
   constexpr auto kData = cex_for_loop::func<
-      PassesOneNTTPInitializesFirstDataFunctor::IType, 0, kMaxTemplateDepth, 1,
-      cex_for_loop::BoolExpressionFunctor_LT,
-      PassesOneNTTPInitializesFirstDataFunctor,
-      cex_for_loop::TypeEncodedNTTPs<PassesOneNTTPInitializesFirstDataFunctor>::type<0>,
-      PassesOneNTTPInitializesFirstDataFunctor::TestInitialDataTypeEncoded>();
+      Passes0NTTPsFunctor::IType, 0, kBoundaryValue, 1,
+      cex_for_loop::BoolExpressionFunctor_LT, Passes0NTTPsFunctor,
+      cex_for_loop::TypeEncodedNTTPs<Passes0NTTPsFunctor>::type,
+      Passes0NTTPsFunctor::TestInitialDataTypeEncoded>();
 
   // Uncomment to print i values in order
   // -----
@@ -134,6 +63,7 @@ TEST(ConstexprFor, PassesOneNTTPInitializesFirstData) {
   // is input_data for nth iteration
   ASSERT_EQ(0, std::get<0>(kData.arr));
   ASSERT_EQ(1, std::get<1>(kData.arr));
+  ASSERT_EQ(kBoundaryValue - 1, std::get<kBoundaryValue - 1>(kData.arr));
 
   // test that initial data is pulled from the correct source and that
   // unmodified data persists
@@ -141,219 +71,220 @@ TEST(ConstexprFor, PassesOneNTTPInitializesFirstData) {
   ASSERT_EQ(3, kData.bar);
 }
 
-// struct LargeIterationFunctor {
-//   // This is the data that will be returned by this functor. Its
-//   modifiable in
-//   // the context of this functor.
-//   struct NonConstexprData {
-//     int foo;
-//     char bar;
-//     std::array<uint8_t, 500> arr;
-//   };
-//
-//   // The type for I
-//   using IType = std::size_t;
-//   // The output type for func. The first element is the output data--i.e.
-//   the
-//   // result of whatever work was done on the input data. The remaining
-//   elements
-//   // are the template nontype parameters that will be passed to func on
-//   each
-//   // call. These parameters are constexpr by definition.
-//   using OutputType = std::tuple<NonConstexprData, std::size_t>;
-//
-//   template <IType I, std::size_t AppendIndex>
-//   static constexpr OutputType func(NonConstexprData input_data) {
-//     NonConstexprData output_data = input_data;
-//     std::get<AppendIndex>(output_data.arr) = I;
-//     constexpr std::size_t kNextAppendIndex =
-//         (AppendIndex + 1 == output_data.arr.size()) ? 0 : AppendIndex +
-//         1;
-//
-//     OutputType return_value = {output_data, kNextAppendIndex};
-//     return return_value;
-//   };
-//
-//   struct TestInitialDataTypeEncoded {
-//     static constexpr
-//     PassesOneNTTPInitializesFirstDataFunctor::NonConstexprData
-//         // NOLINTNEXTLINE(readability-identifier-naming)
-//         value = {4, 3, {}};
-//   };
-// };
-//
-// TEST(ConstexprFor, LargeIterationCount) {
-//   constexpr uint32_t kTestEnd = 200;
-//
-//   constexpr auto kResult = cex_for_loop::impl::MetaLinearCEXForFunctor<
-//       LargeIterationFunctor::IType, 0, kTestEnd, 1,
-//       cex_for_loop::BoolExpressionFunctor_LT, LargeIterationFunctor,
-//       LargeIterationFunctor::TestInitialDataTypeEncoded,
-//       std::tuple<std::integral_constant<std::size_t, 0>>>::kFunc();
-//
-//   constexpr auto kData = std::get<0>(kResult);
-//
-//   // Uncomment to print i values in order
-//   // -----
-//   // std::string print_string;
-//   // for (int i = 0; i < kData.arr.size(); i++) {
-//   //   print_string.append(std::to_string(kData.arr[i]) + ", ");
-//   // }
-//   // ADD_FAILURE() << print_string;
-//
-//   // tests that NTTP passing works and that output_data from (n-1)th
-//   iteration
-//   // is input_data for nth iteration
-//   ASSERT_EQ(19, std::get<19>(kData.arr));
-//   ASSERT_EQ(30, std::get<30>(kData.arr));
-//   ASSERT_EQ(190, std::get<190>(kData.arr));
-//
-//   // test that initial data is pulled from the correct source and that
-//   // unmodified data persists
-//   // ASSERT_EQ(TestInitialDataTypeEncoded::kValue.foo, kData.foo);
-//   // ASSERT_EQ(TestInitialDataTypeEncoded::kValue.bar, kData.foo);
-//   ASSERT_EQ(4, kData.foo);
-//   ASSERT_EQ(3, kData.bar);
-// }
+struct Passes1NTTPsFunctor {
+  // This is the data that will be returned by this functor. Its modifiable in
+  // the context of this functor.
+  struct NonConstexprData {
+    int foo;
+    char bar;
+    std::array<std::size_t, 1000> arr;
+  };
 
-// TEST(ConstexprFor, PositiveNumberToZero) {
-//   constexpr uint32_t kTestTemplateDepth = 5;
-//   constexpr TestFunctorSetSmallIteration::Data kTestInitialValues = {
-//       {0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, 0};
-//
-//   constexpr auto kResult =
-//       cex_for_loop::constexpr_for<int32_t, kTestTemplateDepth - 1, 0, -1,
-//                                   cex_for_loop::BoolExpressionFunctor_GEQ,
-//                                   TestFunctorSetSmallIteration>(
-//           kTestInitialValues);
-//
-//   // Uncomment to print i values in order
-//   // -----
-//   // std::string print_string;
-//   // for (int i = 0; i < kResult.i_tracker.size(); i++) {
-//   //   print_string.append(std::to_string(kResult.i_tracker[i]) + ", ");
-//   // }
-//   // ADD_FAILURE() << print_string;
-//
-//   for (uint32_t i = 0; i < kTestTemplateDepth; i++) {
-//     ASSERT_EQ(kResult.i_tracker[i], i);
-//   }
-//   ASSERT_EQ(kResult.last_i_value, 0);
-// }
-//
-// TEST(ConstexprFor, ZeroToNegativeNumber) {
-//   constexpr int64_t kTestTemplateDepth = 5;
-//   constexpr TestFunctorAdd::Data kTestInitialValues = {};
-//
-//   constexpr auto kResult =
-//       cex_for_loop::constexpr_for<int64_t, 0, -kTestTemplateDepth, -1,
-//                                   cex_for_loop::BoolExpressionFunctor_GT,
-//                                   TestFunctorAdd>(kTestInitialValues);
-//   ASSERT_EQ(0 - 1 - 2 - 3 - 4, kResult.kResult);
-// }
-//
-// TEST(ConstexprFor, NegativeNumberToZero) {
-//   constexpr int64_t kTesttemplatedepth = 5;
-//   constexpr TestFunctorAdd::Data kTestinitialvalues = {};
-//
-//   constexpr auto kResult =
-//       cex_for_loop::constexpr_for<int64_t, -kTesttemplatedepth + 1, 0, 1,
-//                                   cex_for_loop::BoolExpressionFunctor_LEQ,
-//                                   TestFunctorAdd>(kTestinitialvalues);
-//   ASSERT_EQ(-4 - 3 - 2 - 1 - 0, kResult.kResult);
-// }
-//
-// TEST(ConstexprFor, NegativeNumberToNegativeNumber) {
-//   using UserProvidedType =
-//       TestFunctorSetForNegative2IncNegative2Start::NumericType;
-//   constexpr UserProvidedType kTestStart = -2;
-//   constexpr UserProvidedType kTestEnd = -202;
-//   constexpr UserProvidedType kTestInc = -2;
-//
-//   constexpr TestFunctorSetForNegative2IncNegative2Start::Data
-//       kTestInitialValues = {};
-//
-//   constexpr auto kResult =
-//       cex_for_loop::constexpr_for<UserProvidedType, kTestStart, kTestEnd,
-//                                   kTestInc,
-//                                   cex_for_loop::BoolExpressionFunctor_GEQ,
-//                                   TestFunctorSetForNegative2IncNegative2Start>(
-//           kTestInitialValues);
-//
-//   std::array<UserProvidedType, 200> expected_i_tracker = {};
-//   auto expected_i_inc = 0;
-//   for (UserProvidedType i = kTestStart; i >= kTestEnd; i += kTestInc) {
-//     // NOLINTNEXTLINE(bugprone-narrowing-conversions)
-//     expected_i_tracker[expected_i_inc] = i;
-//     expected_i_inc++;
-//   }
-//
-//   // Uncomment to print i values in order
-//   // -----
-//   // std::string print_string;
-//   // for (UserProvidedType value : kResult.i_tracker) {
-//   //   print_string.append(std::to_string(value) + ", ");
-//   // }
-//   // ADD_FAILURE() << print_string
-//
-//   for (int i = 0; i < expected_i_inc; i++) {
-//     ASSERT_EQ(kResult.i_tracker[i], expected_i_tracker[i]) << i;
-//   }
-// }
-//
-// TEST(ConstexprFor, NegativeNumberToPositiveNumberBy3s) {
-//   constexpr TestFunctorAdd::Data kTestInitialValues = {};
-//
-//   constexpr auto kResult =
-//       cex_for_loop::constexpr_for<int64_t, -15, 15, 3,
-//                                   cex_for_loop::BoolExpressionFunctor_LEQ,
-//                                   TestFunctorAdd>(kTestInitialValues);
-//
-//   ASSERT_EQ(kResult.kResult, 0);
-// }
-//
-// TEST(ConstexprFor, TemplateInstantiationDepth2000) {
-//   constexpr int64_t kTestTemplateDepth = 2000;
-//   constexpr TestFunctorSetLargeIterationIncBy3WithNegative1700Start::Data
-//       kTestInitialValues = {};
-//
-//   constexpr auto kResult = cex_for_loop::constexpr_for<
-//       int64_t, (-3 * kTestTemplateDepth) + 300, 300, 3,
-//       cex_for_loop::BoolExpressionFunctor_LEQ,
-//       TestFunctorSetLargeIterationIncBy3WithNegative1700Start>(
-//       kTestInitialValues);
-//
-//   // Uncomment to print i values in order
-//   // -----
-//   // std::string print_string;
-//   // for (int i = 0; i < kTestTemplateDepth; i++) {
-//   //   print_string.append(std::to_string(kResult.i_tracker[i]) + ", ");
-//   // }
-//   // ADD_FAILURE() << print_string;
-//
-//   ASSERT_EQ(kResult.last_i_value, 300);
-// }
-//
-// TEST(ConstexprFor, TemplateInstantiationDepth10000) {
-//   constexpr uint64_t kTestTemplateDepth = 10'000;
-//   constexpr TestFunctorSetLargeIteration::Data kTestInitialValues = {};
-//
-//   constexpr auto kResult =
-//       cex_for_loop::constexpr_for<int64_t, 1, kTestTemplateDepth, 1,
-//                                   cex_for_loop::BoolExpressionFunctor_LEQ,
-//                                   TestFunctorSetLargeIteration>(
-//           kTestInitialValues);
-//
-//   // Uncomment to print i values in order
-//   // -----
-//   // std::string print_string;
-//   // for (int i = 0; i < kTestTemplateDepth; i++) {
-//   //   print_string.append(std::to_string(kResult.i_tracker[i]) + ", ");
-//   // }
-//   // ADD_FAILURE() << print_string;
-//
-//   ASSERT_EQ(kResult.last_i_value, kTestTemplateDepth);
-//   for (uint64_t i = 0; i < kTestTemplateDepth; i++) {
-//     ASSERT_EQ(kResult.i_tracker[i], i);
-//   }
-// }
+  // The type for I
+  using IType = std::size_t;
+  // The output type for func. The first element is the output data--i.e. the
+  // result of whatever work was done on the input data. The remaining elements
+  // are the template nontype parameters that will be passed to func on each
+  // call. These parameters are constexpr by definition.
+  using OutputType = std::tuple<NonConstexprData, std::size_t>;
+
+  template <IType I, std::size_t A>
+  static constexpr OutputType func(NonConstexprData input_data) {
+    NonConstexprData output_data = input_data;
+    std::get<I>(output_data.arr) = I;
+
+    OutputType return_value = {output_data, A};
+    return return_value;
+  };
+
+  struct TestInitialDataTypeEncoded {
+    static constexpr NonConstexprData
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        value = {4, 3, {}};
+  };
+};
+
+TEST(ConstexprFor, NTTPCount1InitilizesAndReturnsData) {
+  constexpr std::size_t kBoundaryValue = 1000;
+
+  constexpr auto kData = cex_for_loop::func<
+      Passes1NTTPsFunctor::IType, 0, kBoundaryValue, 1,
+      cex_for_loop::BoolExpressionFunctor_LT, Passes1NTTPsFunctor,
+      cex_for_loop::TypeEncodedNTTPs<Passes1NTTPsFunctor>::template type<0>,
+      Passes1NTTPsFunctor::TestInitialDataTypeEncoded>();
+
+  // Uncomment to print i values in order
+  // -----
+  // std::string print_string;
+  // for (int i = 0; i < kData.arr.size(); i++) {
+  //   print_string.append(std::to_string(kData.arr[i]) + ", ");
+  // }
+  // ADD_FAILURE() << print_string;
+
+  // tests that NTTP passing works and that output_data from (n-1)th
+  // iteration
+  // is input_data for nth iteration
+  ASSERT_EQ(0, std::get<0>(kData.arr));
+  ASSERT_EQ(1, std::get<1>(kData.arr));
+  ASSERT_EQ(kBoundaryValue - 1, std::get<kBoundaryValue - 1>(kData.arr));
+
+  // test that initial data is pulled from the correct source and that
+  // unmodified data persists
+  ASSERT_EQ(4, kData.foo);
+  ASSERT_EQ(3, kData.bar);
+}
+
+struct Passes5NTTPsFunctor {
+  // This is the data that will be returned by this functor. Its modifiable in
+  // the context of this functor.
+  struct NonConstexprData {
+    int foo;
+    char bar;
+  };
+
+  // The type for I
+  using IType = std::size_t;
+  // The output type for func. The first element is the output data--i.e. the
+  // result of whatever work was done on the input data. The remaining elements
+  // are the template nontype parameters that will be passed to func on each
+  // call. These parameters are constexpr by definition.
+  using OutputType =
+      std::tuple<NonConstexprData, int64_t, char, unsigned long, uint32_t, int>;
+
+  template <IType I, int64_t NTTP0, char NTTP1, unsigned long NTTP2,
+            uint32_t NTTP3, int NTTP4>
+  static constexpr OutputType func(NonConstexprData input_data) {
+    NonConstexprData output_data = input_data;
+
+    output_data.foo = NTTP4;
+    output_data.bar = 0;
+
+    OutputType return_value = {output_data, NTTP0, NTTP1,
+                               NTTP2,       NTTP3, NTTP4 + 1};
+    return return_value;
+  };
+
+  struct TestInitialDataTypeEncoded {
+    static constexpr NonConstexprData
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        value = {4, 3};
+  };
+};
+
+TEST(ConstexprFor, Passes5NTTPs) {
+  constexpr std::size_t kBoundaryValue = 1000;
+
+  constexpr auto kData = cex_for_loop::func<
+      Passes5NTTPsFunctor::IType, 0, kBoundaryValue, 1,
+      cex_for_loop::BoolExpressionFunctor_LT, Passes5NTTPsFunctor,
+      cex_for_loop::TypeEncodedNTTPs<Passes5NTTPsFunctor>::type<0, 0, 0, 0, 0>,
+      Passes5NTTPsFunctor::TestInitialDataTypeEncoded>();
+
+  // test that NTTPs value persists from prior iteration
+  ASSERT_EQ(kBoundaryValue - 1, kData.foo);
+  ASSERT_EQ(0, kData.bar);
+}
+
+struct CountsDownBy3Functor {
+  // This is the data that will be returned by this functor. Its modifiable in
+  // the context of this functor.
+  struct NonConstexprData {
+    int foo;
+    char bar;
+    std::array<int, 1001> arr;
+  };
+
+  // The type for I
+  using IType = int;
+  // The output type for func. The first element is the output data--i.e. the
+  // result of whatever work was done on the input data. The remaining elements
+  // are the template nontype parameters that will be passed to func on each
+  // call. These parameters are constexpr by definition.
+  using OutputType = std::tuple<NonConstexprData>;
+
+  template <IType I>
+  static constexpr OutputType func(NonConstexprData input_data) {
+    NonConstexprData output_data = input_data;
+    std::get<(I / 3)>(output_data.arr) = I;
+
+    OutputType return_value = {output_data};
+    return return_value;
+  };
+
+  struct TestInitialDataTypeEncoded {
+    static constexpr NonConstexprData
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        value = {4, 3, {}};
+  };
+};
+
+TEST(ConstexprFor, Passes0NTTPsCountDownBy3WithGEQ) {
+  constexpr int kBoundaryValue = 3000;
+
+  constexpr auto kData = cex_for_loop::func<
+      CountsDownBy3Functor::IType, kBoundaryValue, 0, -3,
+      cex_for_loop::BoolExpressionFunctor_GEQ, CountsDownBy3Functor,
+      cex_for_loop::TypeEncodedNTTPs<CountsDownBy3Functor>::type,
+      CountsDownBy3Functor::TestInitialDataTypeEncoded>();
+
+  // ASSERT_EQ(0, kData);
+
+  // Uncomment to print i values in order
+  // -----
+  // std::string print_string;
+  // for (int i = 0; i < kData.arr.size(); i++) {
+  //   print_string.append(std::to_string(kData.arr[i]) + ", ");
+  // }
+  // ADD_FAILURE() << print_string;
+
+  // tests that NTTP passing works and that output_data from (n-1)th
+  // iteration is input_data for nth iteration
+  ASSERT_EQ(0, std::get<0>(kData.arr));
+  ASSERT_EQ(3, std::get<1>(kData.arr));
+  ASSERT_EQ(3000, std::get<1000>(kData.arr));
+
+  // test that initial data is pulled from the correct source and that
+  // unmodified data persists
+  ASSERT_EQ(4, kData.foo);
+  ASSERT_EQ(3, kData.bar);
+}
+
+struct NoIterationTestFunctor {
+  // This is the data that will be returned by this functor. Its modifiable in
+  // the context of this functor.
+  struct NonConstexprData {
+    bool is_func_called;
+  };
+
+  // The type for I
+  using IType = std::size_t;
+  // The output type for func. The first element is the output data--i.e. the
+  // result of whatever work was done on the input data. The remaining elements
+  // are the template nontype parameters that will be passed to func on each
+  // call. These parameters are constexpr by definition.
+  using OutputType = std::tuple<NonConstexprData>;
+
+  template <IType I>
+  static constexpr OutputType func(NonConstexprData input_data) {
+    NonConstexprData output_data = input_data;
+    output_data.is_func_called = true;
+
+    return {output_data};
+  };
+
+  struct TestInitialDataTypeEncoded {
+    static constexpr NonConstexprData
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        value = {false};
+  };
+};
+
+TEST(ConstexprFor, NTTPCount0NoIterationReturnsWithoutExecutingFunc) {
+  constexpr auto kData = cex_for_loop::func<
+      NoIterationTestFunctor::IType, 0, 0, 1,
+      cex_for_loop::BoolExpressionFunctor_LT, NoIterationTestFunctor,
+      cex_for_loop::TypeEncodedNTTPs<NoIterationTestFunctor>::type,
+      NoIterationTestFunctor::TestInitialDataTypeEncoded>();
+
+  ASSERT_FALSE(kData.is_func_called);
+}
