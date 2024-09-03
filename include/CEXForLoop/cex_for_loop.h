@@ -2,7 +2,6 @@
 #define CEX_FOR_LOOP_H
 
 #include "impl/nary_tree_cex_for_loop.h"
-#include "type_encoded_nttps_helper.h"
 
 namespace cex_for_loop {
 
