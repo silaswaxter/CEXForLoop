@@ -1,14 +1,5 @@
 # Always Enabled Flags
-#-----
 common --enable_bzlmod
 
-# Toolchain Config
-#-----
-# Use Bazel's default C++ toolchain to build the tools used during the build.
-build:clang_config --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
-
-# Use our custom-configured c++ toolchain.
-build:clang_config --crosstool_top=//toolchain:clang_suite
-
-# Use --cpu as a differentiator.
-build:clang_config --cpu=k8
+# Build Flags
+build --cxxopt="-std=c++14"

@@ -5,6 +5,9 @@
 #include <array>
 #include <cstdint>
 
+static_assert(__cplusplus == 201402L,
+              "Ensure your testing with the oldest supported c++ version.");
+
 struct Passes0NTTPsFunctor {
   // This is the data that will be returned by this functor. Its modifiable in
   // the context of this functor.
