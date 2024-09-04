@@ -1,23 +1,60 @@
 # CEXForLoop
 
-CEXForLoop is a header-only library for C++>=14. It provides a constexpr
-for-loop where the iteration variable is also constexpr. The library converts
-iteration to recursion. The library subverts the compiler enforced template
-instantiation depth so that iteration lengths can be larger than this limit;
-expansions greater than user-override-able `CEX_FOR_LOOP_MAX_TEMPLATE_DEPTH`
-(default = 100) take place along an N-tree where each node linearly recurses as
-much as possible without violating the maximum template depth limit.
+**CEXForLoop** is a powerful C++ header-only library designed to bring the
+performance and flexibility of constexpr iteration to your code. Built with
+advanced template metaprogramming techniques, it transforms traditional loop
+iteration into a recursive n-ary tree structure, achieving remarkable
+compile-time efficiency and unlocking new possibilities for constexpr
+programming.
 
-## Illustrative Examples
+## Key Features
+
+- **Requires C++14 or Higher**: CEXForLoop is fully compatible with modern C++
+  standards, taking advantage of constexpr capabilities available from C++14
+  onwards.
+- **Constexpr Iteration Variable**: Iterate over arrays and other data
+  structures in a fully constexpr manner, enabling complex compile-time
+  computations and optimizations that would be impossible with standard runtime
+  loops.
+- **Optimized Template Depth**: By converting iteration into a recursive n-ary
+  tree, CEXForLoop significantly reduces the required template depth, allowing
+  it to scale efficiently. This approach achieves an O(log(n)) growth in
+  template depth relative to iteration count, making it suitable for large
+  compile-time loops that would otherwise hit compiler limits.
+- **Extensive Parameter Passing**: Supports passing up to 50 non-template type
+  parameters (i.e. constexpr values) to the loop body function, enabling highly
+  customizable and flexible iteration logic. Parameters are passed to each
+  successive iteration, allowing them to be modified along the way for dynamic
+  and adaptable computations.
+
+## How to Use?
+
+1. **Include the Required Headers**:
+   - Add the top-level header: `include/cex_for_loop.h`.
+   - Include `include/bool_expression_functors.h` if using a standard boolean
+     expression.
+
+2. **Define a Functor for the Loop Body**:
+   - This functor will serve as the internal body of your for loop.
+   - See [Writing a Functor](#writing-a-functor) below for more details.
+
+3. **Call the Constexpr For Loop Function**:
+   - Pass the necessary arguments:
+     - The type of the iteration variable.
+     - Start, end, and increment values of the iteration.
+     - The boolean expression to determine loop termination.
+     - The previously defined body functor.
+     - Initial values for user-provided non-template type parameters (NTTP) and
+       any non-constexpr data.
+
+## Writing a Functor
+
+### Illustrative Examples
 
 Usage is simple. A live example of the following code can be found at
 [this compiler explorer](https://godbolt.org/z/Erv4rc41c).
 
-1. Include the top-level headers, `include/cex_for_loop.h` and
-   `include/bool_expression_functors.h`.
-2. Define a function that will make up the body/statement of the for loop. There
-   are some constraints on this definition like it must be within a struct known
-   as a functor. An example is shown below:
+<!-- TODO: refactor example -->
 
 ```cpp
 struct MyFunctor {
