@@ -1,5 +1,8 @@
 # CEXForLoop
 
+![image depicting a full n-ary tree where n = 5 and the tree height is
+3](nary_tree_cex_for_loop_expansion.png)
+
 **CEXForLoop** is a powerful C++ header-only library designed to bring the
 performance and flexibility of constexpr iteration to your code. Built with
 advanced template metaprogramming techniques, it transforms traditional loop
@@ -27,14 +30,38 @@ programming.
   successive iteration, allowing them to be modified along the way for dynamic
   and adaptable computations.
 
+## Table of Contents
+
+<!--toc:start-->
+- [CEXForLoop](#cexforloop)
+  - [Key Features](#key-features)
+  - [Table of Contents](#table-of-contents)
+  - [How to Use?](#how-to-use)
+    - [Writing a Functor](#writing-a-functor)
+    - [Calling CEXForLoop with a Functor](#calling-cexforloop-with-a-functor)
+    - [Illustrative Examples](#illustrative-examples)
+  - [FAQs and Debugging](#faqs-and-debugging)
+  - [How it works](#how-it-works)
+  - [Library Requirements](#library-requirements)
+  - [Installing](#installing)
+  - [Contributing](#contributing)
+    - [Standards](#standards)
+    - [Setup the Test Environment](#setup-the-test-environment)
+      - [Prerequisites](#prerequisites)
+      - [Commands](#commands)
+  - [License](#license)
+<!--toc:end-->
+
 ## How to Use?
 
 1. **Include the Required Headers**:
+
    - Add the top-level header: `include/cex_for_loop.h`.
    - Include `include/bool_expression_functors.h` if using a standard boolean
      expression.
 
 2. **Define a Functor for the Loop Body**:
+
    - This functor will serve as the internal body of your for loop.
    - See [Writing a Functor](#writing-a-functor) below for more details.
 
@@ -47,91 +74,239 @@ programming.
      - Initial values for user-provided non-template type parameters (NTTP) and
        any non-constexpr data.
 
-## Writing a Functor
+### Writing a Functor
+
+If this section is a bit too daunting to read, consider looking at the example
+section first.
+
+1. **Create a New Struct Definition**:
+
+   - Name the struct something sensible that reflects its purpose.
+
+2. **Define a Struct Named `NonConstexprData` Inside Your Functor**:
+
+   - This struct holds the data the for loop operates on. Although the data is
+     **not constexpr** within the loop body, the overall for loop returns this
+     type as a constexpr value. Each iteration returns a tuple containing a
+     constexpr value of this type—refer to step 4.
+
+3. **(Optional) Create an Alias for the Iteration Variable Type**:
+
+   - This allows you to adhere to the single-source-of-truth principle by
+     defining the type in one place, reducing repetition and improving
+     maintainability.
+
+4. **Define an Alias Called `OutputType`**:
+
+   - Create an alias as follows:
+
+     ```cpp
+     using OutputType = std::tuple<NonConstexprData, /*your NTTP types in order here*/>
+     ```
+
+     This is the return value of your functor function, allowing you and
+     (`CEXForLoop` internals) to capture any modifications made to
+     `NonConstexprData` and the NTTPs.
+
+5. **Define a Templated Function**:
+
+   - The function template must have at least one parameter, the type of which
+     should match what is passed to the `CEXForLoop` interface at the call site.
+     If you defined an alias in step 3, use it to avoid duplicate information.
+   - Up to 50 NTTPs can follow the iterated variable as long as their types are
+     listed in order in the `OutputType` alias.
+   - Define the function with the signature:
+
+     ```cpp
+     static constexpr OutputType func(NonConstexprData input_data){
+       // your implementation...
+     }
+     ```
+
+     - Its helpful when defining the function, to consider it in the context of
+       a **functional programming paradigm**.
+
+6. **(Optional) Define the Initial Value Encoded Type Inside the Functor**:
+
+   - _Context:_ `CEXForLoop` requires an initial `NonConstexprData` value to be
+     passed to the loop on the first iteration. Since the `NonConstexprData`
+     value passed to your `func` must be constexpr (from within `CEXForLoop`'s
+     implementation), the value needs to be encoded as a type and passed as a
+     template parameter. (In C++14, user-defined NTTPs are not allowed, so
+     encoding your initial value as a type is the workaround.)
+   - _Optional:_ If your initial value is constant, define the encoded struct
+     type within the functor for better locality and maintainability.
+
+### Calling CEXForLoop with a Functor
+
+The interface for `CEXForLoop` is a constexpr templated function that takes no
+function parameters and returns the `NonConstexprData` value from the final
+iteration. (Note that the `NonConstexprData` name comes from the fact that the
+data is _not constexpr_ from within the for loop body--its result, however, is).
+The template parameter order mimics a traditional for loop:
+
+1. The type of the iteration variable.
+2. The initial value of the iteration variable
+3. The boolean expression functor (type encoded function) that stops further
+   iteration; the function inside the boolean functor takes two values, the
+   current iteration value (`rhs` parameter) and the end value (`lhs`
+   parameter)--see next step. Standard boolean expression functors are provided
+   inside `include/CEXForLoop/bool_expression_functors.h`, however custom
+   boolean functors of the same signature are allowed.
+4. The end value for the iteration variable which is used as the left-hand side
+   parameter in the boolean expression--see prior step.
+5. The increment value for the iteration variable, ie the value that is added to
+   the iteration variable at the end of each iteration.
+6. The functor type that makes up the body of the for loop.
+7. The doubly type encoded (sounds intimidating but you won't have to worry
+   about it) initial values for the user NTTPs. Required regardless of the
+   number of user NTTPs, this parameter is:
+
+   ```cpp
+   std::tuple<
+     /*for the nth user NTTP in user NTTP count:*/
+     std::integral_constant</*nth user NTTP type*/, /*nth user NTTP initial value*/>
+   >
+   ```
+
+   This is **gross**! So, a helper was created that allows you to pass the
+   constexpr values you want, and it will encode them correctly using the
+   `BodyFunctor` `OutputType`:
+
+   - _For 0 user NTTPs:_
+
+     ```cpp
+     cex_for_loop::TypeEncodedNTTPs<Passes0NTTPsFunctor>::type
+     ```
+
+   - _For 1 or more user NTTPs:_
+
+     ```cpp
+     cex_for_loop::TypeEncodedNTTPs<Passes0NTTPsFunctor>::template type<
+         /*comma separated initial values in order*/>
+     ```
+
+8. The type encoded initial value for `NonConstexprData`. See the last step of
+   [Writing a Functor](#writing-a-functor) for details.
 
 ### Illustrative Examples
 
-Usage is simple. A live example of the following code can be found at
-[this compiler explorer](https://godbolt.org/z/Erv4rc41c).
+Usage is simple. This following example code is **live** at
+[this compiler explorer](https://godbolt.org/z/5W6r4r5nG). See
+`test/constexpr_for_test.cc` for more examples.
 
-<!-- TODO: refactor example -->
+First, we include the necessary headers:
 
 ```cpp
-struct MyFunctor {
-  // Must be called "Data"
-  struct Data {
-    //-----CUSTOM CONTENTS-----
-    std::array<uint8_t, 10> foo;
-    uint8_t bar;
-    //-----CUSTOM CONTENTS-----
+#include "include/CEXForLoop/cex_for_loop.h"
+#include "include/CEXForLoop/bool_expression_functors.h"
+```
+
+Then we define a functor that describes the for loop we are going to call:
+
+```cpp
+struct MyFunctorWithNTTP1 {
+  // This is the data that will be returned by this functor. Its modifiable in
+  // the context of this functor.
+  struct NonConstexprData {
+    int foo;
+    char bar;
+    std::array<std::size_t, 100> arr;
   };
 
-  // Must be called "func"
-  template <uint8_t I>  // `I` will be of type `IType` (1st template parameter)
-  static constexpr Data func(Data input_data) {
-    //-----CUSTOM CONTENTS-----
-    std::get<I>(input_data.foo) = std::get<I>(input_data.foo) + input_data.bar;
-    //-----CUSTOM CONTENTS-----
-    return input_data;
+  // The type for I
+  using IType = std::size_t;
+  // The output type for func. The first element is the output data--i.e. the
+  // result of whatever work was done on the input data. The remaining elements
+  // are the template nontype parameters that will be passed to func on each
+  // call. These parameters are constexpr by definition.
+  using OutputType = std::tuple<NonConstexprData, std::size_t>;
+
+  template <IType I, std::size_t AppendIndex>
+  static constexpr OutputType func(NonConstexprData input_data) {
+    NonConstexprData output_data = input_data;
+    std::get<AppendIndex>(output_data.arr) = I;
+
+    constexpr std::size_t UpdatedAppendIndex =
+            (AppendIndex == (output_data.arr.size() - 1)) ?
+            0 :
+            AppendIndex + 1;
+
+    OutputType return_value = {output_data, UpdatedAppendIndex};
+    return return_value;
+  };
+
+  struct TestInitialDataTypeEncoded {
+    static constexpr NonConstexprData
+        // NOLINTNEXTLINE(readability-identifier-naming)
+        value = {4, 3, {}};
   };
 };
 ```
 
-> [!NOTE]
->
-> These are all of the constraints. This list is exhaustive, but if you copy and
-> paste the definition and change only the `Data` and `func` internals you don't
-> need to worry about these.
->
-> - The function must be wrapped in a structure
-> - The function must be named `func`
-> - The functor (i.e. encapsulating struct) must also define a struct called
->   `Data`.
-> - The function **should** (will otherwise be cast) be templated on whatever
-
-    user provided type is provided at the `CEXForLoop::constexpr_for<...>(...)`
-    call-site (aka first template parameter).
-
-> - The function must only take and return the previously defined `Data` struct
-
-<!-- markdownlint-disable MD029 -->
-
-3. Call the constexpr for loop. The iteration variable begins at the 2nd
-   template parameter and is incremented by the 4th template parameter;
-   iteration ends when the boolean expression functor (the 5th template
-   parameter) returns false while comparing the iteration variable to the 3rd
-   template parameter. The 6th template parameter is your custom functor type.
-   The function parameter is the initial data of your custom functor `Data`
-   type. Here is an example.
-
-<!-- markdownlint-enable MD029 -->
+Next we call the `CEXForLoop` public interface function and capture its result:
 
 ```cpp
-constexpr MyFunctor::Data input_data = { {1, 1, 2, 2, 3, 3, 4, 4, 5, 5}, 12};
-constexpr MyFunctor::Data result =
-    CEXForLoop::constexpr_for<0, input_data.foo.size(), 1,
-                              CEXForLoop::BoolExpressionFunctor_LT,
-                              MyFunctor>(input_data);
+constexpr auto kData = cex_for_loop::func<
+    MyFunctorWithNTTP1::IType, 0, cex_for_loop::BoolExpressionFunctor_LT, 200,
+    1, MyFunctorWithNTTP1,
+    cex_for_loop::TypeEncodedNTTPs<MyFunctorWithNTTP1>::template type<0>,
+    MyFunctorWithNTTP1::TestInitialDataTypeEncoded>();
 ```
+
+Finally, we can access the constexpr resultant data:
+
+```cpp
+constexpr std::array<int, std::get<99>(kData.arr)> kExample = {};
+```
+
+## FAQs and Debugging
+
+**Q: My function call failed and the compiler error is hard to read; What do I
+do?**  
+A: While writing the library I (Silas) ran into this issue many times. The
+strategy that works best is to search through the compilation error from the top
+down for the word `error`. This can happen from a variety of issues, most
+commonly:
+
+- A static assert is failing from inside one of the iterations--eg accessing an
+  out of bounds index in an `std::array`.
+  - Check that your using the correct boolean expression.
+- There is a mismatch in user NTTPs at:
+  - call-site initial values
+  - `OutputType` definition
+  - `func` template list
+  - return value from the function
+
+**Q: What is the required template depth for \_\_ number iterations?**  
+A: You can expect to get about 500 iterations for 100 templates deep and about
+40,000 iterations for 150 templates deep. An approximate (recorded with a
+slightly diffferent implementation that is off by a couple of templates) graph
+can be found [here](https://www.desmos.com/calculator/f3sedir5ez).
 
 > [!NOTE]
 >
-> `IType` (the first template parameter) must be a be a non-cv-qualified signed
-> integer type.
->
-> All the standard boolean expressions are already defined in
-> `include/bool_expression_functors.h`.
+> This only matters if your calling `CEXForLoop` from within a context that is
+> already of hundreds of templates deep or if your compiler's template depth is
+> set lower (gcc and clang default 900).
 
-## Requirements
+**Q: Why is my compile time so long?** A: If your iteration count is at all
+significant (>1000) expect to wait at least 5 seconds. In short, the compiler is
+doing a lot. Each iteration is at least a function call and template
+instantiation.
 
-### Library Requirements
+## How it works
+
+<!-- Insert Blog/Article Link once complete -->
+
+## Library Requirements
 
 - C++ Version >= C++14
 
 ## Installing
 
-Your compiler must be pointed at CEXForLoop (e.g.
-`-I<location-of-this-library>/include`)
+Your compiler must be pointed at the installation location of `CEXForLoop` (eg
+`-I<location-of-this-library>/include/CEXForLoop/`)
 
 ## Contributing
 
@@ -140,6 +315,9 @@ collaboration processes in terms of writing code and project direction.
 
 1. Enable custom git hooks by running
    `git config --local include.path ../.gitconfig`.
+   - These git hooks will run the python generator scripts automatically on
+     pre-commit to ensure the generated files are in sync with the generation
+     code
 
 ### Standards
 
@@ -154,31 +332,18 @@ This project follows these standards:
 
 #### Prerequisites
 
-- Unix Machine (see note below)
-- Clang 16 Installed (see note below)
 - Bazel (preferably [Bazelisk](https://github.com/bazelbuild/bazelisk))
-  installed
+  installed.
   - Bazelisk installs and executes bazel for you; it manages the version of
     bazel installed--important for truly reproducible builds across machines.
     LittlePP "lives at the head" in terms of bazel version so by using Bazelisk,
     the latest version of bazel will be used whenever its invoked.
 
-> [!NOTE]
->
-> **About Bazel's Toolchain**: The build system used for testing the library is
-> Bazel. Since, at the time of writing, Bazel's default C++ toolchain is for
-> c++2011, and AFAIK there isn't a way to override this without resorting to the
-> `copts` in BUILD targets, a basic c++ toolchain is constructed; currently, the
-> hermeticity is violated since this toolchain depends on clang 16 being
-> installed on a Unix machine--my setup. This should be fixed, but I didn't want
-> to waste time making the build system generic if I'm the only one using it.
-
 #### Commands
 
-- All tests are run with
-  `bazelisk test --config=clang_config --test_output=all //test:all`
-- `compile_commands.json` is generated with
-  `bazelisk run --config=clang_config //:refresh_compile_commands`
+- All tests are run with `bazelisk test --test_output=all //test:all`
+- `compile_commands.json` can be generated by running
+  `bazelisk run //:refresh_compile_commands`
   - This file is consumed by tools such as `clang-tidy`. Read more
     [here](https://github.com/hedronvision/bazel-compile-commands-extractor)
 
