@@ -48,8 +48,8 @@ TEST(ConstexprFor, NTTPCount0InitilizesAndReturnsData) {
   constexpr std::size_t kBoundaryValue = 1000;
 
   constexpr auto kData = cex_for_loop::func<
-      Passes0NTTPsFunctor::IType, 0, kBoundaryValue, 1,
-      cex_for_loop::BoolExpressionFunctor_LT, Passes0NTTPsFunctor,
+      Passes0NTTPsFunctor::IType, 0, cex_for_loop::BoolExpressionFunctor_LT,
+      kBoundaryValue, 1, Passes0NTTPsFunctor,
       cex_for_loop::TypeEncodedNTTPs<Passes0NTTPsFunctor>::type,
       Passes0NTTPsFunctor::TestInitialDataTypeEncoded>();
 
@@ -111,8 +111,8 @@ TEST(ConstexprFor, NTTPCount1InitilizesAndReturnsData) {
   constexpr std::size_t kBoundaryValue = 1000;
 
   constexpr auto kData = cex_for_loop::func<
-      Passes1NTTPsFunctor::IType, 0, kBoundaryValue, 1,
-      cex_for_loop::BoolExpressionFunctor_LT, Passes1NTTPsFunctor,
+      Passes1NTTPsFunctor::IType, 0, cex_for_loop::BoolExpressionFunctor_LT,
+      kBoundaryValue, 1, Passes1NTTPsFunctor,
       cex_for_loop::TypeEncodedNTTPs<Passes1NTTPsFunctor>::template type<0>,
       Passes1NTTPsFunctor::TestInitialDataTypeEncoded>();
 
@@ -178,8 +178,8 @@ TEST(ConstexprFor, Passes5NTTPs) {
   constexpr std::size_t kBoundaryValue = 1000;
 
   constexpr auto kData = cex_for_loop::func<
-      Passes5NTTPsFunctor::IType, 0, kBoundaryValue, 1,
-      cex_for_loop::BoolExpressionFunctor_LT, Passes5NTTPsFunctor,
+      Passes5NTTPsFunctor::IType, 0, cex_for_loop::BoolExpressionFunctor_LT,
+      kBoundaryValue, 1, Passes5NTTPsFunctor,
       cex_for_loop::TypeEncodedNTTPs<Passes5NTTPsFunctor>::type<0, 0, 0, 0, 0>,
       Passes5NTTPsFunctor::TestInitialDataTypeEncoded>();
 
@@ -225,8 +225,8 @@ TEST(ConstexprFor, Passes0NTTPsCountDownBy3WithGEQ) {
   constexpr int kBoundaryValue = 3000;
 
   constexpr auto kData = cex_for_loop::func<
-      CountsDownBy3Functor::IType, kBoundaryValue, 0, -3,
-      cex_for_loop::BoolExpressionFunctor_GEQ, CountsDownBy3Functor,
+      CountsDownBy3Functor::IType, kBoundaryValue,
+      cex_for_loop::BoolExpressionFunctor_GEQ, 0, -3, CountsDownBy3Functor,
       cex_for_loop::TypeEncodedNTTPs<CountsDownBy3Functor>::type,
       CountsDownBy3Functor::TestInitialDataTypeEncoded>();
 
@@ -284,8 +284,8 @@ struct NoIterationTestFunctor {
 
 TEST(ConstexprFor, NTTPCount0NoIterationReturnsWithoutExecutingFunc) {
   constexpr auto kData = cex_for_loop::func<
-      NoIterationTestFunctor::IType, 0, 0, 1,
-      cex_for_loop::BoolExpressionFunctor_LT, NoIterationTestFunctor,
+      NoIterationTestFunctor::IType, 0, cex_for_loop::BoolExpressionFunctor_LT,
+      0, 1, NoIterationTestFunctor,
       cex_for_loop::TypeEncodedNTTPs<NoIterationTestFunctor>::type,
       NoIterationTestFunctor::TestInitialDataTypeEncoded>();
 
