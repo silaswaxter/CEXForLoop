@@ -5,11 +5,12 @@
 
 namespace cex_for_loop {
 
-template <typename IType, IType Start, IType End, IType Inc,
-          typename BoolExpressionFunctor, typename BodyFunctor,
+template <typename IType, IType Start, typename BoolExpressionFunctor,
+          IType End, IType Inc, typename BodyFunctor,
           typename InitialTupleWithTypeEncodedNTTPs,
           typename InitialNonCEXDataFunctor>
 constexpr typename BodyFunctor::NonConstexprData func() {
+  // consider testing and removing these static_assert constraints:
   static_assert(!static_cast<bool>(std::is_const<IType>().value),
                 "User provided type may NOT be const qualified.");
   static_assert(!static_cast<bool>(std::is_volatile<IType>().value),
@@ -17,8 +18,6 @@ constexpr typename BodyFunctor::NonConstexprData func() {
   static_assert(
       std::is_integral<IType>().value && not std::is_same<IType, bool>(),
       "User provided type must be an integer type (excludes bool).");
-  // static_assert(std::is_signed<IType>().value,
-  //               "User provided type must be signed integer.");
 
   return std::get<0>(
       impl::NAryTreeCEXForLoop<BodyFunctor>::template With<
