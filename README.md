@@ -30,6 +30,65 @@ programming.
   successive iteration, allowing them to be modified along the way for dynamic
   and adaptable computations.
 
+## A Simple Example
+
+Here is a basic example (run-able with Godbolt here) in which a constexpr 
+`std::array` of length 100 is created. A for loop from 0 to 199 by 1 is called
+with CEXForLoop. Starting from the beginning of the array, the iteration 
+variable is written to the array; when the "AppendIndex" surpasses the array
+length, its set to the first index.
+
+#include <array>
+```cpp
+#include <array>
+
+#include <CEXForLoop/cex_for_loop.h>
+#include <CEXForLoop/bool_expression_functors.h>
+
+struct MyFunctorWithNTTP1 {
+  struct NonConstexprData {
+    std::array<std::size_t, 100> i_tracker;
+  };
+
+  using IType = std::size_t;
+  using OutputType = std::tuple<NonConstexprData, std::size_t>;
+
+  template <IType I, std::size_t AppendIndex>
+  static constexpr OutputType func(NonConstexprData data) {
+    std::get<AppendIndex>(data.i_tracker) = I;
+
+    // if its the last index of the array go to the start
+    constexpr std::size_t UpdatedAppendIndex =
+            (AppendIndex == (data.i_tracker.size() - 1)) ?
+            0 :
+            AppendIndex + 1;
+
+    return { data, UpdatedAppendIndex };
+  };
+
+  struct TypeEncodedInitialValue {
+    static constexpr NonConstexprData
+        // zero-initialize the array
+        value = {{}};
+  };
+
+  using InitialNTTPs = cex_for_loop::TypeEncodedNTTPs<
+        MyFunctorWithNTTP1>::template type<0>;
+};
+
+constexpr auto kData = cex_for_loop::func<
+    MyFunctorWithNTTP1::IType, 0, 
+    cex_for_loop::BoolExpressionFunctor_LT, 200,
+    1, MyFunctorWithNTTP1, 
+    MyFunctorWithNTTP1::InitialNTTPs,
+    MyFunctorWithNTTP1::TypeEncodedInitialValue>();
+
+static_assert(std::get<0>(kData.i_tracker) == 100, 
+    "This should be true");
+static_assert(std::get<99>(kData.i_tracker) == 199, 
+    "This should be true");
+```  
+
 ## Table of Contents
 
 <!--toc:start-->
