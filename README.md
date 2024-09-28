@@ -356,7 +356,8 @@ instantiation.
 
 ## How it works
 
-<!-- Insert Blog/Article Link once complete -->
+I wrote an article on LinkedIn where I dive into how it works, the development
+history, etc. I think its a good read. You can find it [here](https://www.linkedin.com/pulse/pushing-limits-c-how-i-built-constexpr-loop-library-silas-waxter-aunvc/).
 
 ## Library Requirements
 
